@@ -1,0 +1,7 @@
+{
+    //"python.languageServer": "Pylance",
+    "python.analysis.stubPath": "./typings",
+    //  "python.analysis.extraPaths": [
+    // "/home/mohab_magdy/miniconda3/envs/rag-app/lib/python3.13/site-packages"
+    // ]
+}
