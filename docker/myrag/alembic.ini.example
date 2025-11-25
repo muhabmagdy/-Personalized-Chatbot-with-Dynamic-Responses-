@@ -61,7 +61,8 @@ version_path_separator = os  # Use os.pathsep. Default configuration used for ne
 # are written from script.py.mako
 # output_encoding = utf-8
 
-sqlalchemy.url = postgresql://postgres:myrag1234postgres_passwrod@pgvector:5432/myrag # changed from localhost to pgvector (service name in docker-compose)
+# changed from localhost to pgvector (service name in docker-compose)
+sqlalchemy.url = postgresql://postgres:myrag1234postgres_passwrod@pgvector:5432/myrag
 
 
 [post_write_hooks]
