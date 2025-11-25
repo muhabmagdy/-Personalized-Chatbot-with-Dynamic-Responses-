@@ -181,3 +181,75 @@ If you see connection errors when starting the services:
    docker compose logs --tail=100 fastapi
    docker compose logs --tail=100 pgvector
    ```
+
+# Docker Container and Build Explanation
+
+## 🐳 Working Inside the Docker Container
+
+When you are inside the Docker project directory and you run:
+
+``` bash
+sudo docker compose exec fastapi bash
+```
+
+you open a **bash shell inside the FastAPI container**.
+
+Inside this container, your working directory is the **`/app` folder**,
+which corresponds to your local **`src/app` directory** during
+development.
+
+So, when you list the files:
+
+``` bash
+ls
+```
+
+you will see the same folders and files that exist inside the `app`
+directory in `src`.
+
+------------------------------------------------------------------------
+
+## 🔄 Why You Must Use `--build` After Changing Code
+
+If you modify any files in the `src` directory, Docker **does not
+automatically rebuild the image** when you run:
+
+``` bash
+sudo docker compose up
+```
+
+Docker may reuse **old cached build layers**, meaning your changes will
+**not** appear inside the running container.
+
+To force Docker to rebuild the container with the latest code, you must
+use:
+
+``` bash
+sudo docker compose up --build
+```
+
+This command instructs Docker to **ignore old cached builds** and
+rebuild the image from scratch, ensuring your newest code is included.
+
+------------------------------------------------------------------------
+
+## ✅ Summary
+
+-   `docker compose exec fastapi bash` → opens a shell inside the
+    container's `/app` directory\
+-   `/app` maps to your local `src/app`\
+-   After editing code, always use `--build` to avoid running outdated
+    code
+------------------------------------------------------------------------
+
+
+# Restarting Nginx in Docker
+
+When you make changes to the **`nginx` default.conf** file, you need to restart the Nginx service inside the Docker container to apply the changes.
+
+Run the following command:
+
+```bash
+sudo docker compose restart nginx
+```
+This will stop and start the Nginx container, ensuring your new configuration takes effect.

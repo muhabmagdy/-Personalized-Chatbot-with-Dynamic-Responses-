@@ -1,113 +1,146 @@
-# mini-rag
+# 💻 Setup Guide: WSL, Ubuntu, Miniconda, and Project Deployment
 
-This is a minimal implementation of the RAG model for question answering.
+This document outlines the steps required to set up a Linux environment on Windows using WSL 2, install necessary dependencies (Miniconda), and deploy the project services.
 
-## The Course
+---
 
-This is an educational project where all of the codes where explained (step by step) via a set of `Arabic` youtube videos. Please check the list:
+## 1. Windows Subsystem for Linux (WSL) Installation
 
-| # | Title                                    | Link                                                                                                 | Codes                                              |
-|---|------------------------------------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| 1 | About the Course ماذا ولمـــاذا          | [Video](https://www.youtube.com/watch?v=Vv6e2Rb1Q6w&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj)         | NA                                                 |
-| 2 | What will we build ماذا سنبنى في المشروع | [Video](https://www.youtube.com/watch?v=_l5S5CdxE-Q&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj&index=2) | NA                                                 |
-| 3 | Setup your tools الأدوات الأساسية        | [Video](https://www.youtube.com/watch?v=VSFbkFRAT4w&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj&index=3) | NA                                                 |
-| 4 | Project Architecture                     | [Video](https://www.youtube.com/watch?v=Ei_nBwBbFUQ&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj&index=4) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-001) |
-| 5 | Welcome to FastAPI                       | [Video](https://www.youtube.com/watch?v=cpOuCdzN_Mo&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj&index=5) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-002) |
-| 6 | Nested Routes + Env Values               | [Video](https://www.youtube.com/watch?v=CrR2Bz2Y7Hw&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj&index=6) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-003) |
-| 7 | Uploading a File                         | [Video](https://www.youtube.com/watch?v=5alMKCbFqWs&list=PLvLvlVqNQGHCUR2p0b8a0QpVjDUg50wQj&index=7) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-004) |
-| 8 | File Processing                         | [Video](https://www.youtube.com/watch?v=gQgr2iwtSBw) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-005) |
-| 9 | Docker - MongoDB - Motor                         | [Video](https://www.youtube.com/watch?v=2NOKWm0xJAk) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-006) |
-| 10 | Mongo Schemes and Models                        | [Video](https://www.youtube.com/watch?v=zgcnnMJXXV8) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-007) |
-| 11 | Mongo Indexing                        | [Video](https://www.youtube.com/watch?v=iO8FAmUVcjE) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-008) |
-| 12 | Data Pipeline Enhancements                        | [Video](https://www.youtube.com/watch?v=4x1DuezZBDU) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-008) |
-| 13 | Checkpoint-1                        | [Video](https://www.youtube.com/watch?v=7xIsZkCisPk) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-008) |
-| 14 | LLM Factory                        | [Video](https://www.youtube.com/watch?v=5TKRIFtIQAY) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-008) |
-| 15 | Vector DB Factory                        | [Video](https://www.youtube.com/watch?v=JtS9UkvF_10) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-009) |
-| 16 | Semantic Search                       | [Video](https://www.youtube.com/watch?v=V3swQKokJW8) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-010) |
-| 17 | Augmented Answers                       | [Video](https://www.youtube.com/watch?v=1Wx8BoM5pLU) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-011) |
-| 18 | Checkpoint-1 + Fix Issues                       | [Video](https://youtu.be/6zG4Idxldvg) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-012) |
-| 19 | Ollama Local LLM Server                       | [Video](https://youtu.be/-epZ1hAAtrs) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-012) |
-| 20 | From Mongo to Postgres + SQLAlchemy & Alembic                       | [Video](https://www.youtube.com/watch?v=BVOq7Ek2Up0) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-013) |
-| 21 | The way to PgVector                       | [Video](https://www.youtube.com/watch?v=g99yq5zlYAE) | [branch](https://github.com/bakrianoo/mini-rag/tree/tut-014) |
+First, ensure your Windows version meets the requirements.
 
+### Check Windows Version
 
-## Requirements
+1. Open the **Start Menu**.
+2. Search for and open **System Information**.
+3. Check the **OS Name** and **Version**:
 
-- Python 3.10
+   * **Windows 11** is supported.
+   * **Windows 10** must be version **20.04** or higher.
 
-#### Install Dependencies
+### Install WSL and Ubuntu
 
-```bash
+Run **Windows PowerShell** as **Administrator**, then execute:
+
+```
+wsl --install
+wsl --set-default-version 2
+```
+
+Verify WSL version:
+
+```
+wsl --version
+```
+
+Install Ubuntu:
+
+```
+wsl --install Ubuntu
+```
+
+---
+
+## 2. Ubuntu Terminal Setup
+
+1. Launch **Ubuntu** from Start Menu.
+2. Create **username** and **password**.
+3. Update packages:
+
+```
 sudo apt update
-sudo apt install libpq-dev gcc python3-dev
 ```
 
-#### Install Python using MiniConda
+---
 
-1) Download and install MiniConda from [here](https://docs.anaconda.com/free/miniconda/#quick-command-line-install)
-2) Create a new environment using the following command:
-```bash
-$ conda create -n mini-rag python=3.10
+## 3. Working with WSL and Windows Files
+
+Access Windows directory:
+
 ```
-3) Activate the environment:
-```bash
-$ conda activate mini-rag
+cd /mnt/d/development/rag
 ```
 
-### (Optional) Setup you command line interface for better readability
+---
 
-```bash
+## 4. Using Visual Studio Code with WSL
+
+```
+code .
+```
+
+---
+
+## 5. Install Miniconda in WSL
+
+```
+cd ~
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+```
+
+Apply configuration:
+
+```
+bash ~/.profile
+```
+
+---
+
+## 6. Create and Activate Conda Environment
+
+```
+conda create -n rag-app python=3.13
+conda activate rag-app
+conda info --envs
+```
+
+---
+
+## 7. Optional: Improve Terminal Appearance
+
+```
 export PS1="\[\033[01;32m\]\u@\h:\w\n\[\033[00m\]\$ "
 ```
 
-### (Optional) Run Ollama Local LLM Server using Colab + Ngrok
+---
 
-- Check the [notebook](https://colab.research.google.com/drive/1KNi3-9KtP-k-93T3wRcmRe37mRmGhL9p?usp=sharing) + [Video](https://youtu.be/-epZ1hAAtrs)
+## 8. Install Python Dependencies
 
-## Installation
-
-### Install the required packages
-
-```bash
-$ pip install -r requirements.txt
+```
+pip install -r requirements.txt
 ```
 
-### Setup the environment variables
+---
 
-```bash
-$ cp .env.example .env
+## 9. Setup Environment Variables
+
+```
+cp .env.example .env
 ```
 
-### Run Alembic Migration
+---
 
-```bash
-$ alembic upgrade head
+## 10. Run Alembic Migrations
+
+```
+alembic upgrade head
 ```
 
-Set your environment variables in the `.env` file. Like `OPENAI_API_KEY` value.
+---
 
-## Run Docker Compose Services
+## 11. Run Docker Compose Services
 
-```bash
-$ cd docker
-$ cp .env.example .env
+```
+cd docker
+cp .env.example .env
+sudo docker compose up -d
 ```
 
-- update `.env` with your credentials
+---
 
+## 12. Run FastAPI Server
 
-
-```bash
-$ cd docker
-$ sudo docker compose up -d
 ```
-
-## Run the FastAPI server
-
-```bash
-$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
-
-## POSTMAN Collection
-
-Download the POSTMAN collection from [/assets/mini-rag-app.postman_collection.json](/assets/mini-rag-app.postman_collection.json)
