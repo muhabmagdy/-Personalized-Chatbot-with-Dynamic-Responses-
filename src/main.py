@@ -11,13 +11,13 @@ from rag.FusionRetriever import FusionRetriever
 from llm.llm_generator import LLMGenerator
 from rag.intelligent_memory import IntelligentMemory
 
-# Load environment variables
+
 load_dotenv()
 
 
 def main():
     try:
-        # File paths
+      
         text_files = [
             "-Personalized-Chatbot-with-Dynamic-Responses-/src/data/cleaned_texts/automate-the-boring-stuff-with-python-3rd-edition-early-access-3nbsped-9781718503403-9781718503410_com.txt",
             "-Personalized-Chatbot-with-Dynamic-Responses-/src/data/cleaned_texts/fluent-python-2nbsped-9781492056348-9781492056287.txt",
@@ -42,7 +42,7 @@ def main():
         vector_manager = VectorStoreManager(embedding_model)
         qdrant_store = vector_manager.create_store(chunks)
 
-        # Create auto-merging retriever
+
         base_retriever = vector_manager.get_retriever(top_k=50)
         auto_retriever = AutoMergingRetriever(
             base_retriever=base_retriever,
@@ -54,7 +54,7 @@ def main():
 
         print("Initializing Reranker...")
         try:
-            # Use a smaller, faster model that's easier to download
+
             reranker = Reranker(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2", device="cpu")
             print("✓ Reranker loaded successfully")
         except Exception as e:
@@ -123,7 +123,7 @@ def main():
             print("AI:", answer)
             print("-"*80 + "\n")
 
-            # Store interaction in long-term memory
+
             try:
                 memory_system.add_memory(f"Q: {user_question}\nA: {answer[:500]}")
             except Exception as mem_error:

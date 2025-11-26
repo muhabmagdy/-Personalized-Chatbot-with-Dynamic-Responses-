@@ -22,7 +22,7 @@ class IntelligentMemory:
 
         self.client = QdrantClient(path=path)
 
-        # Create collection if it doesn't exist
+       
         self._ensure_collection_exists()
 
         self.vectorstore = QdrantVectorStore(
@@ -60,7 +60,6 @@ class IntelligentMemory:
 
     def get_retriever(self):
         return self.retriever
-    
-    # Alias for backwards compatibility
+
     def get_memory_retriever(self):
         return self.retriever

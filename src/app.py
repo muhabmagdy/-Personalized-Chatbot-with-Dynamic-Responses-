@@ -3,7 +3,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from rag.data_loader import DataLoader
 
-# Load environment variables from .env file
+
 load_dotenv()
 from rag.chunker import TextChunker
 from rag.embedder import Embedder
@@ -17,14 +17,14 @@ from rag.intelligent_memory import IntelligentMemory
 from evaluation.evaluator import evaluate_answer
 
 
-# Page config
+
 st.set_page_config(
     page_title="Python RAG Chatbot",
     page_icon="🐍",
     layout="wide"
 )
 
-# Custom CSS
+
 st.markdown("""
 <style>
     .stChat message {
@@ -48,15 +48,15 @@ def initialize_rag_system():
     
     import os
     
-    # Try multiple possible locations for data files
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     
     possible_data_dirs = [
-        os.path.join(parent_dir, "data", "cleaned_texts"),  # ../data/cleaned_texts/
-        os.path.join(parent_dir, "data"),                    # ../data/
-        os.path.join(current_dir, "data", "cleaned_texts"),  # ./data/cleaned_texts/
-        os.path.join(current_dir, "data"),                   # ./data/
+        os.path.join(parent_dir, "data", "cleaned_texts"),  
+        os.path.join(parent_dir, "data"),                  
+        os.path.join(current_dir, "data", "cleaned_texts"),  
+        os.path.join(current_dir, "data"),                   
     ]
     
     file_names = [
@@ -67,11 +67,11 @@ def initialize_rag_system():
         "python-crash-course-3nbsped-1718502702-9781718502703_compress.txt"
     ]
     
-    # Find the correct data directory
+
     data_dir = None
     for possible_dir in possible_data_dirs:
         if os.path.exists(possible_dir):
-            # Check if at least one file exists
+
             test_file = os.path.join(possible_dir, file_names[0])
             if os.path.exists(test_file):
                 data_dir = possible_dir
@@ -83,13 +83,11 @@ def initialize_rag_system():
         )
     
     text_files = [os.path.join(data_dir, fname) for fname in file_names]
-    
-    # Verify all files exist
+
     missing_files = [f for f in text_files if not os.path.exists(f)]
     if missing_files:
         raise FileNotFoundError(f"Missing files: {missing_files}")
-    
-    # Load and process documents
+
     loader = DataLoader(text_files)
     documents = loader.load()
     
@@ -110,16 +108,14 @@ def initialize_rag_system():
         top_k=50
     )
     query_engine = QueryEngine(auto_retriever)
-    
-    # Initialize reranker (optional - may fail if model can't be downloaded)
+ 
     try:
-        # Use a smaller, faster model (90MB instead of 1.1GB)
+
         reranker = Reranker(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2", device="cpu")
     except Exception as e:
         print(f"Warning: Reranker failed to load: {e}")
         reranker = None
-    
-    # Initialize fusion retriever
+
     fusion_retriever = FusionRetriever(k=60)
     
     return query_engine, len(chunks), reranker, fusion_retriever
@@ -144,15 +140,13 @@ def initialize_memory():
 
 
 def main():
-    # Header
+
     st.title("🐍 Python RAG Chatbot")
     st.markdown("*Your AI-powered Python learning assistant*")
-    
-    # Sidebar
+
     with st.sidebar:
         st.header("⚙️ Settings")
-        
-        # Check API Key status
+
         api_key = os.environ.get("GEMINI_API_KEY")
         if api_key:
             st.success("✅ API Key Loaded")
@@ -161,12 +155,10 @@ def main():
             st.info("Add GEMINI_API_KEY to your .env file")
         
         st.divider()
-        
-        # Display settings
+
         show_sources = st.checkbox("Show retrieved sources", value=False)
         show_metrics = st.checkbox("Show evaluation metrics", value=False)
-        
-        # Only show reranking option if reranker loaded
+ 
         if 'reranker' in st.session_state and st.session_state.get('reranker') is not None:
             use_reranking = st.checkbox("Enable Reranking", value=True, help="Use cross-encoder reranking for better results")
         else:
@@ -176,26 +168,22 @@ def main():
         use_fusion = st.checkbox("Enable Fusion", value=True, help="Combine multiple retrieval strategies")
         
         st.divider()
-        
-        # Memory controls
+
         st.header("🧠 Memory")
         if st.button("Clear Chat History"):
             st.session_state.messages = []
             st.rerun()
         
         st.divider()
-        
-        # System status
+
         st.header("📊 System Status")
-    
-    # Initialize systems
+
     with st.spinner("Loading RAG system... This may take a moment."):
         try:
             query_engine, num_chunks, reranker, fusion_retriever = initialize_rag_system()
             st.sidebar.success(f"✅ RAG System Ready")
             st.sidebar.info(f"📚 {num_chunks} chunks indexed")
-            
-            # Store reranker status in session state
+  
             st.session_state['reranker'] = reranker
             if reranker:
                 st.sidebar.success("✅ Reranker Ready")
@@ -206,15 +194,14 @@ def main():
             query_engine = None
             reranker = None
             fusion_retriever = None
-    
-    # Initialize LLM
+
     generator = initialize_llm()
     if generator:
         st.sidebar.success("✅ LLM Connected")
     else:
         st.sidebar.warning("⚠️ No API Key - Enter in sidebar")
     
-    # Initialize memory
+
     try:
         memory_system = initialize_memory()
         memory = memory_system.get_retriever()
@@ -223,24 +210,20 @@ def main():
         st.sidebar.error(f"❌ Memory Error: {str(e)[:50]}")
         memory = None
         memory_system = None
-    
-    # Initialize chat history
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
-    
-    # Display chat history
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            
-            # Show sources if enabled
+
             if show_sources and "sources" in message:
                 with st.expander("📚 Sources"):
                     for i, source in enumerate(message["sources"][:3]):
                         st.markdown(f"**Source {i+1}:**")
                         st.text(source[:500] + "..." if len(source) > 500 else source)
-            
-            # Show metrics if enabled
+
             if show_metrics and "metrics" in message:
                 with st.expander("📊 Evaluation Metrics"):
                     cols = st.columns(3)
@@ -248,10 +231,9 @@ def main():
                     cols[0].metric("Answer Relevance", f"{metrics.get('answer_relevance', 0):.2f}")
                     cols[1].metric("Context Relevance", f"{metrics.get('context_relevance', 0):.2f}")
                     cols[2].metric("Groundedness", f"{metrics.get('groundedness', 0):.2f}")
-    
-    # Chat input
+
     if prompt := st.chat_input("Ask me anything about Python..."):
-        # Check if systems are ready
+
         if not generator:
             st.error("Please enter your Gemini API key in the sidebar.")
             return
@@ -259,17 +241,15 @@ def main():
         if not query_engine:
             st.error("RAG system failed to initialize. Check your data files.")
             return
-        
-        # Add user message
+
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        
-        # Generate response
+
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    # Retrieve from memory
+   
                     memory_texts = []
                     memory_docs_list = []
                     if memory:
@@ -279,14 +259,12 @@ def main():
                             memory_docs_list = memory_texts
                         except:
                             pass
-                    
-                    # Retrieve from RAG
+
                     merged_docs = query_engine.query(prompt)
-                    rag_texts = [d.page_content for d in merged_docs[:10]]  # Get more for fusion/reranking
-                    
-                    # Apply Fusion if enabled
+                    rag_texts = [d.page_content for d in merged_docs[:10]] 
+
                     if use_fusion and fusion_retriever:
-                        # Combine multiple retrieval strategies
+
                         retrieval_results = [
                             memory_docs_list,
                             rag_texts
@@ -295,18 +273,15 @@ def main():
                         retrieved_texts = fused_texts
                     else:
                         retrieved_texts = memory_texts + rag_texts
-                    
-                    # Apply Reranking if enabled
+
                     if use_reranking and reranker and len(retrieved_texts) > 0:
                         reranked = reranker.rerank(prompt, retrieved_texts, top_k=5)
                         retrieved_texts = [doc for doc, score in reranked]
                     else:
-                        retrieved_texts = retrieved_texts[:5]  # Top 5 without reranking
-                    
-                    # Generate answer
+                        retrieved_texts = retrieved_texts[:5]  
+
                     answer = generator.answer_generation(prompt, retrieved_texts)
-                    
-                    # Evaluate answer
+
                     metrics = evaluate_answer(
                         question=prompt,
                         answer=answer,
