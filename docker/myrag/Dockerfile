@@ -43,4 +43,4 @@ ENTRYPOINT ["/entrypoint.sh"]
 # worker count is set to 4 as a reasonable default
 # worker usage improves handling multiple requests concurrently
 # --reload will disable multiple workers, so not used here
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
