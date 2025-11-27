@@ -4,6 +4,11 @@ from stores.llm.LLMEnums import DocumentTypeEnum
 from typing import List
 import json
 import typing
+import gc
+
+# Using a generic value for demonstration. Adjust this based on your available memory
+# and how many embeddings you can comfortably hold in RAM at once (e.g., 500-2000).
+EMBEDDING_BATCH_SIZE = 500 
 
 class NLPController(BaseController):
 
@@ -30,37 +35,145 @@ class NLPController(BaseController):
         return json.loads(
             json.dumps(collection_info, default=lambda x: x.__dict__)
         )
-    
-    async def index_into_vector_db(self, project: Project, chunks: List[DataChunk],
-                                   chunks_ids: List[int], 
-                                   do_reset: bool = False):
+
+    # async def index_into_vector_db(
+    #     self, 
+    #     project: Project, 
+    #     chunks: List[DataChunk],
+    #     chunks_ids: List[int], 
+    #     do_reset: bool = False
+    # ):
+    #     """
+    #     Indexes text chunks and their embeddings into the vector database in small batches.
+    #     This approach minimizes peak memory usage by avoiding storing all embeddings at once.
+    #     """
         
-        # step1: get collection name
-        collection_name = self.create_collection_name(project_id=typing.cast(int, project.project_id))
+    #     # step 1: get collection name
+    #     collection_name = self.create_collection_name(project_id=typing.cast(int, project.project_id))
 
-        # step2: manage items
-        texts = [ c.chunk_text for c in chunks ]
-        metadata = [ c.chunk_metadata for c in  chunks]
-        vectors = self.embedding_client.embed_text(text=texts, 
-                                                  document_type=DocumentTypeEnum.DOCUMENT.value)
+    #     # step 2: create collection if not exists (This should only run once)
+    #     _ = await self.vectordb_client.create_collection(
+    #         collection_name=collection_name,
+    #         embedding_size=self.embedding_client.embedding_size,
+    #         do_reset=do_reset,
+    #     )
+        
+    #     # --- MEMORY OPTIMIZATION STARTS HERE ---
+        
+    #     # Iterate over the input data in small batches to limit memory consumption.
+    #     num_chunks = len(chunks)
+        
+    #     for i in range(0, num_chunks, EMBEDDING_BATCH_SIZE):
+    #         # Extract a small batch of data
+    #         batch_chunks = chunks[i:i + EMBEDDING_BATCH_SIZE]
+    #         batch_chunks_ids = chunks_ids[i:i + EMBEDDING_BATCH_SIZE]
+            
+    #         # Prepare data structures for the current batch
+    #         texts = [c.chunk_text for c in batch_chunks]
+    #         metadata = [c.chunk_metadata for c in batch_chunks]
+            
+    #         # 3. Embed the small batch
+    #         # This is the key step: 'vectors' now only holds EMBEDDING_BATCH_SIZE vectors, 
+    #         # not the entire dataset's vectors, drastically lowering peak RAM usage.
+    #         vectors = self.embedding_client.embed_text(
+    #             text=texts, 
+    #             document_type=DocumentTypeEnum.DOCUMENT.value
+    #         )
 
-        # step3: create collection if not exists
-        _ = await self.vectordb_client.create_collection(
-            collection_name=collection_name,
-            embedding_size=self.embedding_client.embedding_size,
-            do_reset=do_reset,
-        )
+    #         # 4. Insert the small batch into the vector db
+    #         # The insert_many function will further batch the insertion calls (e.g., 50 at a time)
+    #         _ = await self.vectordb_client.insert_many(
+    #             collection_name=collection_name,
+    #             texts=texts,
+    #             metadata=metadata,
+    #             vectors=vectors,
+    #             record_ids=batch_chunks_ids,
+    #         )
+            
+    #         # The variables (texts, metadata, vectors) holding the batch data 
+    #         # will be garbage collected or overwritten in the next iteration.
 
-        # step4: insert into vector db
-        _ = await self.vectordb_client.insert_many(
-            collection_name=collection_name,
-            texts=texts,
-            metadata=metadata,
-            vectors=vectors,
-            record_ids=chunks_ids,
-        )
+    #     return True
+    
+    # ==========================================
+    # 4. OPTIMIZED INDEXING CONTROLLER
+    # ==========================================
 
+    async def index_into_vector_db(
+        self, 
+        project: Project, 
+        chunks_data: List[dict],  # Changed from ORM objects to dicts
+        collection_name: str
+    ):
+        """
+        Memory-optimized indexing with explicit cleanup.
+        """
+        
+        num_chunks = len(chunks_data)
+        EMBEDDING_BATCH_SIZE = 10  # Reduced from potential larger values
+        
+        for i in range(0, num_chunks, EMBEDDING_BATCH_SIZE):
+            batch_data = chunks_data[i:i + EMBEDDING_BATCH_SIZE]
+            
+            # Extract data
+            texts = [c["chunk_text"] for c in batch_data]
+            metadata = [c["chunk_metadata"] for c in batch_data]
+            chunk_ids = [c["chunk_id"] for c in batch_data]
+            
+            # Embed (this now returns float16 embeddings)
+            vectors = self.embedding_client.embed_text(
+                text=texts, 
+                document_type=DocumentTypeEnum.DOCUMENT.value
+            )
+            
+            # Insert into vector DB
+            _ = await self.vectordb_client.insert_many(
+                collection_name=collection_name,
+                texts=texts,
+                metadata=metadata,
+                vectors=vectors,
+                record_ids=chunk_ids,
+            )
+            
+            # CRITICAL: Explicitly delete batch data
+            del texts, metadata, chunk_ids, vectors, batch_data
+            
+            # Periodic garbage collection
+            if i % 50 == 0:
+                gc.collect()
+        
         return True
+
+    # async def index_into_vector_db(self, project: Project, chunks: List[DataChunk],
+    #                                chunks_ids: List[int], 
+    #                                do_reset: bool = False):
+        
+    #     # step1: get collection name
+    #     collection_name = self.create_collection_name(project_id=typing.cast(int, project.project_id))
+
+    #     # step2: manage items
+    #     texts = [ c.chunk_text for c in chunks ]
+    #     metadata = [ c.chunk_metadata for c in  chunks]
+    #     vectors = self.embedding_client.embed_text(text=texts, 
+    #                                               document_type=DocumentTypeEnum.DOCUMENT.value)
+
+    #     # step3: create collection if not exists
+    #     _ = await self.vectordb_client.create_collection(
+    #         collection_name=collection_name,
+    #         embedding_size=self.embedding_client.embedding_size,
+    #         do_reset=do_reset,
+    #     )
+
+    #     # step4: insert into vector db
+    #     _ = await self.vectordb_client.insert_many(
+    #         collection_name=collection_name,
+    #         texts=texts,
+    #         metadata=metadata,
+    #         vectors=vectors,
+    #         record_ids=chunks_ids,
+    #     )
+
+    #     return True
 
     async def search_vector_db_collection(self, project: Project, text: str, limit: int | None = 10):
 
