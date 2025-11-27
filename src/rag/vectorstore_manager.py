@@ -1,8 +1,6 @@
 from langchain_community.vectorstores import Qdrant
 
 class VectorStoreManager:
-    """Handles storing and retrieving documents from Qdrant."""
-
     def __init__(self, embedding_model, location=":memory:", collection_name="books_db"):
         self.embedding_model = embedding_model
         self.location = location

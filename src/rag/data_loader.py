@@ -1,8 +1,6 @@
 from langchain_community.document_loaders import TextLoader
 
 class DataLoader:
-    """Loads text files as LangChain documents."""
-
     def __init__(self, file_paths):
         self.file_paths = file_paths
 

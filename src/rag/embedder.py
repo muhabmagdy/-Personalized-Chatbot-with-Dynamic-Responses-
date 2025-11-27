@@ -1,9 +1,7 @@
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 class Embedder:
-    """Creates embeddings for documents or queries."""
-
-    def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2"):
+    def __init__(self, model_name="BAAI/bge-small-en-v1.5"):
         self.model_name = model_name
         self.model = HuggingFaceEmbeddings(
             model_name=model_name,

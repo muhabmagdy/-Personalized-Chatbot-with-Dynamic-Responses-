@@ -1,8 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 class TextChunker:
-    """Splits documents into overlapping chunks."""
-
     def __init__(self, chunk_size=1000, chunk_overlap=200):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap

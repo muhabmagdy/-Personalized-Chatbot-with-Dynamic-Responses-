@@ -2,11 +2,6 @@ from typing import List, Dict
 from collections import defaultdict
 
 class FusionRetriever:
-    """
-    Implements Reciprocal Rank Fusion (RRF)
-    fusion(k) = Σ (1 / (k + rank_i))
-    """
-
     def __init__(self, k: int = 60):
         self.k = k  
 

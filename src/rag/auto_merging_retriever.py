@@ -5,17 +5,6 @@ LC_Document = Document
 
 
 class AutoMergingRetriever:
-    """
-    Wraps a LangChain retriever and merges related chunks into larger documents.
-    Compatible with VectorStoreRetriever from recent LangChain versions.
-
-    Args:
-        base_retriever: LangChain retriever (VectorStoreRetriever or custom)
-        merge_char_limit: max characters for a merged output unit (approx)
-        max_chunks_per_merge: fallback limit for number of chunks to merge
-        top_k: how many candidate chunks to fetch
-    """
-
     def __init__(
         self,
         base_retriever,
@@ -53,10 +42,7 @@ class AutoMergingRetriever:
         return sorted(docs, key=sort_key)
 
     def _fetch_candidates(self, query: str) -> List[Document]:
-        """
-        Fetch documents from base retriever.
-        Supports both old and new LangChain API.
-        """
+
         if hasattr(self.base_retriever, 'invoke'):
             return self.base_retriever.invoke(query)
         

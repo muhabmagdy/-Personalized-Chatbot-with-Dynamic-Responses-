@@ -1,11 +1,5 @@
 class QueryEngine:
-    """Handles querying the retriever."""
-
     def __init__(self, retriever):
-        """
-        retriever: either a LangChain retriever (has get_relevant_documents) OR
-                   an AutoMergingRetriever (exposes .retrieve(query) -> List[Document])
-        """
         self.retriever = retriever
 
     def query(self, query_text):
