@@ -7,6 +7,7 @@ class DocumentTypeEnum(Enum):
 class EmbedderEnums(Enum):
     """Enumeration of supported embedding providers."""
     HUGGINGFACE = "HUGGINGFACE"
+    FASTEMBED = "FASTEMBED"
     OPENAI = "OPENAI"
     COHERE = "COHERE"
     GEMINI = "GEMINI"

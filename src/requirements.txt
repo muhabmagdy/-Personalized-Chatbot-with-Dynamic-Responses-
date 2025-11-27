@@ -21,6 +21,7 @@ psycopg>=3.1.18
 pgvector==0.4.1
 PyMuPDF>=1.26.6
 nltk==3.9.1
+fastembed==0.7.3
 
 # Monitoring and metrics
 prometheus-client==0.21.1
