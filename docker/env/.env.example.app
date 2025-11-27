@@ -8,14 +8,14 @@ FILE_DEFAULT_CHUNK_SIZE=512000 # 512KB
 
 POSTGRES_USERNAME=""
 POSTGRES_PASSWORD=""
-POSTGRES_HOST="" # Use the service name defined in docker-compose.yml - all in the same network ==> backend
+POSTGRES_HOST=""
 POSTGRES_PORT=5432
-POSTGRES_MAIN_DATABASE="mrag"
+POSTGRES_MAIN_DATABASE=""
 
 # ========================= LLM Config =========================
 GENERATION_BACKEND = "GEMINI"
-EMBEDDING_BACKEND_LITERAL = ["HUGGINGFACE"]
-EMBEDDING_BACKEND = "HUGGINGFACE"
+EMBEDDING_BACKEND_LITERAL = ["HUGGINGFACE", "FASTEMBED"]
+EMBEDDING_BACKEND = "FASTEMBED"
 
 OPENAI_API_KEY="sk-"
 OPENAI_API_URL= ""
@@ -24,8 +24,11 @@ GEMINI_API_KEY=""
 
 GENERATION_MODEL_ID_LITERAL = ["gpt-4o-mini", "gpt-4o","gemini-2.5-flash"]
 GENERATION_MODEL_ID="gemini-2.5-flash"
-EMBEDDING_MODEL_ID="sentence-transformers/all-MiniLM-L6-v2" #gemini-embedding-001, sentence-transformers/all-MiniLM-L6-v2
+
+EMBEDDING_ID_LITERAL = ["gemini-embedding-001", "sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-small-en-v1.5"]
+EMBEDDING_MODEL_ID="BAAI/bge-small-en-v1.5"
 EMBEDDING_MODEL_SIZE=384
+
 HUGGINGFACE_DEVICE ="cpu"
 
 INPUT_DAFAULT_MAX_CHARACTERS=2000
