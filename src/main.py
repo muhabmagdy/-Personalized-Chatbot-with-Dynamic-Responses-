@@ -28,7 +28,7 @@ def should_use_web_search(query: str) -> bool:
 
 def main():
     try:
-        # File paths
+
         text_files = [
             "-Personalized-Chatbot-with-Dynamic-Responses-/src/data/cleaned_texts/automate-the-boring-stuff-with-python-3rd-edition-early-access-3nbsped-9781718503403-9781718503410_com.txt",
             "-Personalized-Chatbot-with-Dynamic-Responses-/src/data/cleaned_texts/fluent-python-2nbsped-9781492056348-9781492056287.txt",

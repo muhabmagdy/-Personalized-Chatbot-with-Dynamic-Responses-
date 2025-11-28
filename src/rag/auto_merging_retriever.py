@@ -42,7 +42,7 @@ class AutoMergingRetriever:
         return sorted(docs, key=sort_key)
 
     def _fetch_candidates(self, query: str) -> List[Document]:
-
+ 
         if hasattr(self.base_retriever, 'invoke'):
             return self.base_retriever.invoke(query)
         
