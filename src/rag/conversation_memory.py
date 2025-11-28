@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 class ConversationBufferMemory:
  
-    def __init__(self, window_size: int = 3):
+    def __init__(self, window_size: int = 1):
  
         self.window_size = window_size
         self.exchanges: List[Tuple[str, str]] = []  
