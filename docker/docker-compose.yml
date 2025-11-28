@@ -1,4 +1,22 @@
 services:
+  # Streamlit UI Application
+  streamlit:
+    build:
+      context: ..
+      dockerfile: docker/streamlit/Dockerfile
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ../streamlit:/app
+    env_file:
+      - ./env/.env.streamlit.app
+    networks:
+      - backend
+    depends_on:
+      - fastapi
+    restart: always
+
   # FastAPI Application
   fastapi:
     build:
@@ -130,6 +148,5 @@ networks:
 volumes:
   fastapi_data:
   pgvector:
-  qdrant_data:
   prometheus_data:
   grafana_data:

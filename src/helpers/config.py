@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List, Optional, cast
+from typing import List, Optional
 # Create a global instance or use a simple function without request arguments
 from functools import lru_cache
 

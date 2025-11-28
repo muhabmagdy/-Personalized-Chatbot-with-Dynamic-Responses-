@@ -44,6 +44,3 @@ class EmbedderProviderFactory:
         self._logger.warning(f"Unsupported embedding provider requested: {provider_name}")
         return None
         # Add more providers here (e.g., if provider_name == EmbedderEnums.OPENAI.value: ...)
-        
-        self._logger.warning(f"Unsupported embedding provider requested: {provider_name}")
-        return None
