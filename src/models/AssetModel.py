@@ -1,7 +1,6 @@
 from .BaseDataModel import BaseDataModel
 from .db_schemes import Asset
 from .enums.DataBaseEnum import DataBaseEnum
-from bson import ObjectId
 from sqlalchemy.future import select
 
 class AssetModel(BaseDataModel):
