@@ -1,0 +1,10 @@
+# ==========================================
+# STREAMLIT UI - COMPLETE REQUIREMENTS
+# ==========================================
+# For Streamlit UI
+streamlit==1.51.0
+# Environment Variable Management
+pydantic-settings==2.12.0
+pydantic==2.12.4
+# HTTP Client for API calls
+httpx==0.25.2

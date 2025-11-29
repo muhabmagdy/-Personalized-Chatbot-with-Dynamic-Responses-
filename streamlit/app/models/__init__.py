@@ -1,2 +1,0 @@
-from .GenerateAnswerRequest import GenerateAnswerRequest
-from .GenerateAnswerRespone import GenerateAnswerRespone

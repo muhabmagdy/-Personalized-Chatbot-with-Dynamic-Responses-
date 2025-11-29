@@ -1,0 +1,103 @@
+# ==========================================
+# STREAMLIT CONFIGURATION
+# ==========================================
+
+[theme]
+# Primary color for interactive elements (buttons, links)
+primaryColor = "#FF4B4B"
+
+# Main background color
+backgroundColor = "#FFFFFF"
+
+# Secondary background color (sidebar, expanders)
+secondaryBackgroundColor = "#F0F2F6"
+
+# Text color
+textColor = "#262730"
+
+# Font family (sans serif, serif, or monospace)
+font = "sans serif"
+
+[server]
+# Run in headless mode (no browser auto-open)
+headless = true
+
+# Port to run the app on
+port = 8501
+
+# Enable CORS (Cross-Origin Resource Sharing)
+enableCORS = false
+
+# Enable XSRF protection
+enableXsrfProtection = true
+
+# Max upload size in MB
+maxUploadSize = 200
+
+# Enable websocket compression
+enableWebsocketCompression = true
+
+[browser]
+# Don't send usage statistics
+gatherUsageStats = false
+
+# Server address
+serverAddress = "localhost"
+
+# Server port (same as [server] port)
+serverPort = 8501
+
+[runner]
+# Automatically rerun script when file changes
+magicEnabled = true
+
+# ==========================================
+# ALTERNATIVE THEMES
+# ==========================================
+
+# Dark Mode Theme (uncomment to use)
+# [theme]
+# primaryColor = "#00D4FF"
+# backgroundColor = "#0E1117"
+# secondaryBackgroundColor = "#1A1D24"
+# textColor = "#FAFAFA"
+# font = "sans serif"
+
+# Light Professional Theme (uncomment to use)
+# [theme]
+# primaryColor = "#4F46E5"
+# backgroundColor = "#FFFFFF"
+# secondaryBackgroundColor = "#F3F4F6"
+# textColor = "#1F2937"
+# font = "sans serif"
+
+# Gemini-like Theme (uncomment to use)
+# [theme]
+# primaryColor = "#1A73E8"
+# backgroundColor = "#FFFFFF"
+# secondaryBackgroundColor = "#F8F9FA"
+# textColor = "#202124"
+# font = "sans serif"
+
+# Claude-like Theme (uncomment to use)
+# [theme]
+# primaryColor = "#9333EA"
+# backgroundColor = "#FFFFFF"
+# secondaryBackgroundColor = "#F5F5F4"
+# textColor = "#292524"
+# font = "sans serif"
+
+# ==========================================
+# NOTES
+# ==========================================
+# 
+# Restart Streamlit after making changes
+# Choose one theme and comment out others
+# Customize colors to match your brand
+#
+# Color Resources:
+# - https://coolors.co (color palette generator)
+# - https://colorhunt.co (color inspiration)
+# - https://materialui.co/colors (material design colors)
+#
+# ==========================================

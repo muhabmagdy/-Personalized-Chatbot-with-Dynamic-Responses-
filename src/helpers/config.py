@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 from typing import List, Optional
 # Create a global instance or use a simple function without request arguments
 from functools import lru_cache
