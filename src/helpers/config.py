@@ -1,5 +1,5 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List, Optional, cast
+from pydantic_settings import BaseSettings
+from typing import List, Optional
 # Create a global instance or use a simple function without request arguments
 from functools import lru_cache
 
@@ -29,8 +29,11 @@ class Settings(BaseSettings):
 
     GENERATION_MODEL_ID_LITERAL: Optional[List[str]] = None
     GENERATION_MODEL_ID: Optional[str] = None
+
+    EMBEDDING_ID_LITERAL: Optional[List[str]] = None
     EMBEDDING_MODEL_ID: Optional[str] = None
     EMBEDDING_MODEL_SIZE: Optional[int] = None
+
     HUGGINGFACE_DEVICE: Optional[str] = None
     INPUT_DAFAULT_MAX_CHARACTERS: Optional[int] = None
     GENERATION_DAFAULT_MAX_TOKENS: Optional[int] = None

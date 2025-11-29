@@ -1,4 +1,22 @@
 services:
+  # Streamlit UI Application
+  streamlit:
+    build:
+      context: ..
+      dockerfile: docker/streamlit/Dockerfile
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ../streamlit_ui:/app
+    env_file:
+      - ./env/.env.streamlit.app
+    networks:
+      - backend
+    depends_on:
+      - fastapi
+    restart: always
+
   # FastAPI Application
   fastapi:
     build:
@@ -53,19 +71,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
-  # Qdrant (VectorDB)
-  qdrant:
-    image: qdrant/qdrant:v1.13.6
-    container_name: qdrant
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    networks:
-      - backend
-    restart: always
 
   # Prometheus Monitoring
   prometheus:
@@ -143,6 +148,5 @@ networks:
 volumes:
   fastapi_data:
   pgvector:
-  qdrant_data:
   prometheus_data:
   grafana_data:

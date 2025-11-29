@@ -1,1 +1,1 @@
-from .HuggingFaceEmbeddingsProvider import HuggingFaceEmbeddingsProvider
+from .FastEmbedProvider import FastEmbedProvider

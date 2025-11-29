@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any, cast
 
 # Import necessary files
 from .EmbedderInterface import EmbedderInterface
-from .providers import HuggingFaceEmbeddingsProvider
+from .providers import FastEmbedProvider
 from .EmbedderEnums import EmbedderEnums
 from helpers.config import Settings
 
@@ -26,20 +26,21 @@ class EmbedderProviderFactory:
         :return: An initialized EmbedderInterface instance, or None if unsupported.
         """
         
-        if provider_name == EmbedderEnums.HUGGINGFACE.value:
-            # Create HuggingFace Provider using configuration settings
+        # --- NEW FASTEMBED PROVIDER ---
+        if provider_name == EmbedderEnums.FASTEMBED.value:
             try:
-                self._logger.info(f"Creating HuggingFace Provider with model ID: {self.config.EMBEDDING_MODEL_ID}")
-                return HuggingFaceEmbeddingsProvider(
+                self._logger.info(f"Creating FastEmbed Provider with model ID: {self.config.EMBEDDING_MODEL_ID}")
+                # FastEmbed takes the model ID directly and handles its own device logic
+                return FastEmbedProvider(
                     model_id=cast(str, self.config.EMBEDDING_MODEL_ID),
                     embedding_size=cast(int, self.config.EMBEDDING_MODEL_SIZE),
-                    model_kwargs={"device": cast(str, self.config.HUGGINGFACE_DEVICE)}
+                    # Pass additional kwargs if needed, e.g., cache_dir=self.config.FASTEMBED_CACHE
                 )
             except Exception as e:
-                self._logger.critical(f"Failed to instantiate HuggingFace Provider: {e}")
+                self._logger.critical(f"Failed to instantiate FastEmbed Provider: {e}")
                 raise RuntimeError(f"Factory failed to create {provider_name} provider.") from e
-        
-        # Add more providers here (e.g., if provider_name == EmbedderEnums.OPENAI.value: ...)
-        
+            
+        # ... rest of the code ...
         self._logger.warning(f"Unsupported embedding provider requested: {provider_name}")
         return None
+        # Add more providers here (e.g., if provider_name == EmbedderEnums.OPENAI.value: ...)

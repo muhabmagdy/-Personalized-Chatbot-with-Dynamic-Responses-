@@ -40,6 +40,8 @@ document_prompt = Template(
 #### Footer ####
 footer_prompt = Template("\n".join([
     "Based only on the above documents, please generate an answer for the student.",
+    "Don't mention the document numbers in your answer.",
+    "This documents as context are provided to help you answer the question as best as possible.",
     "## Student Question/Request:",
     "$query",
     "",

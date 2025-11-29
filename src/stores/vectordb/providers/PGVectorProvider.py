@@ -31,11 +31,21 @@ class PGVectorProvider(VectorDBInterface):
 
     async def connect(self):
         async with self.db_client() as session:
-            async with session.begin():
-                await session.execute(sql_text(
-                    "CREATE EXTENSION IF NOT EXISTS vector"
+            try:
+                # Check if vector extension already exists
+                result = await session.execute(sql_text(
+                    "SELECT 1 FROM pg_extension WHERE extname = 'vector'"
                 ))
-                await session.commit()
+                extension_exists = result.scalar_one_or_none()
+                
+                if not extension_exists:
+                    # Only create if it doesn't exist
+                    await session.execute(sql_text("CREATE EXTENSION vector"))
+                    await session.commit()
+            except Exception as e:
+                # If extension already exists or any other error, just log and continue
+                self.logger.warning(f"Vector extension setup: {str(e)}")
+                await session.rollback()
 
     async def disconnect(self):
         pass
@@ -183,7 +193,51 @@ class PGVectorProvider(VectorDBInterface):
         
         return await self.create_vector_index(collection_name=collection_name, index_type=index_type)
 
-    
+    async def delete_many_by_chunk_ids(self, collection_name: str, chunk_ids: list[int]):
+        """
+        Deletes records from the specified collection where the CHUNK_ID is in the provided list.
+
+        Args:
+            collection_name (str): The name of the table/collection to delete from.
+            chunk_ids (list[int]): A list of integer chunk IDs (record_id in your insert) to delete.
+        
+        Returns:
+            int: The number of rows deleted.
+        """
+        # Check if the collection exists (retaining your original logic)
+        is_collection_existed = await self.is_collection_existed(collection_name=collection_name)
+        if not is_collection_existed:
+            self.logger.error(f"Can not delete records from non-existed collection: {collection_name}")
+            return 0
+
+        # 1. Format the list of integer IDs for the SQL IN clause
+        # Use str() to convert integers to strings, but DO NOT add single quotes.
+        formatted_chunk_ids = ", ".join([str(chunk_id) for chunk_id in chunk_ids])
+        
+        # Handle an empty list
+        if not formatted_chunk_ids:
+            self.logger.warning(f"Attempted to delete with an empty chunk_ids list in collection: {collection_name}")
+            return 0
+
+        async with self.db_client() as session:
+            async with session.begin():
+                # 2. Construct the DELETE SQL statement
+                # Assuming PgVectorTableSchemeEnums.CHUNK_ID.value is 'chunk_id' or similar
+                delete_sql = sql_text(f"""
+                    DELETE FROM {collection_name}
+                    WHERE {PgVectorTableSchemeEnums.CHUNK_ID.value} IN ({formatted_chunk_ids})
+                """)
+
+                # 3. Execute the statement
+                result = await session.execute(delete_sql)
+                
+                # 4. Commit the transaction
+                await session.commit()
+                
+                # 5. Return the count of deleted rows
+                return result.rowcount
+        
+
     async def insert_one(self, collection_name: str, text: str, vector: list,
                             metadata: dict = None,
                             record_id: str = None):

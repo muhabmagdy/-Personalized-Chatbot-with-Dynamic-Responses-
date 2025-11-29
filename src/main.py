@@ -19,7 +19,7 @@ setup_metrics(app)
 @app.get("/welcome")
 def welcome():
     return {
-        "message": "Welcome to MyRAG API."
+        "message": "Welcome to Python Mentor RAG API."
     }
 
 
