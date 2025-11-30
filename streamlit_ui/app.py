@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Page configuration
 st.set_page_config(
-    page_title="MyRAG - AI Assistant",
+    page_title="Python Mentor RAG - AI Assistant",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
