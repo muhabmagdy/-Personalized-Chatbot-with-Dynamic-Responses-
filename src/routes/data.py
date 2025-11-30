@@ -13,6 +13,7 @@ from models.AssetModel import AssetModel
 from models.db_schemes import DataChunk, Asset
 from models.enums.AssetTypeEnum import AssetTypeEnum
 from controllers import NLPController
+from .nlp import create_nlp_controller
 import typing
 
 logger = logging.getLogger('uvicorn.error')
@@ -113,12 +114,8 @@ async def process_endpoint(request: Request, project_id: int, process_request: P
         project_id=project_id
     )
 
-    nlp_controller = NLPController(
-        vectordb_client=request.app.vectordb_client,
-        generation_client=request.app.generation_client,
-        embedding_client=request.app.embedding_client,
-        template_parser=request.app.template_parser,
-    )
+    nlp_controller = create_nlp_controller(request)
+
 
     asset_model = await AssetModel.create_instance(
             db_client=request.app.db_client
