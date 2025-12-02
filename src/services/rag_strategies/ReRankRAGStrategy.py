@@ -170,14 +170,14 @@ class ReRankRAGStrategy(RAGStrategyInterface):
             ])
             
             rerank_prompt = f"""Given the query and documents below, rank the documents by relevance to the query.
-Return ONLY a comma-separated list of document numbers in order of relevance (most relevant first).
+                            Return ONLY a comma-separated list of document numbers in order of relevance (most relevant first).
 
-Query: {query}
+                            Query: {query}
 
-Documents:
-{docs_text}
+                            Documents:
+                            {docs_text}
 
-Ranking (comma-separated numbers):"""
+                            Ranking (comma-separated numbers):"""
             
             response = self.generation_client.generate_text(
                 prompt=rerank_prompt,
