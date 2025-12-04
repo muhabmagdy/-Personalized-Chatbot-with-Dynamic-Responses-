@@ -8,5 +8,7 @@ Contains reusable UI components
 
 from .chat_interface import ChatInterface
 from .sidebar import Sidebar
+from .evaluation_display import EvaluationDisplay
+
 
 __all__ = ['ChatInterface', 'Sidebar']

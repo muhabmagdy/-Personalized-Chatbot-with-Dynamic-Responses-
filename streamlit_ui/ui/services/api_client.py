@@ -1,13 +1,15 @@
 """
 API Client Service
 Handles all communication with the RAG backend API
+Supports all 6 RAG strategies and comprehensive evaluation
 """
 
 import httpx
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class APIClient:
     """Client for communicating with RAG system API."""
@@ -24,19 +26,21 @@ class APIClient:
         self.timeout = timeout
         logger.info(f"API Client initialized with base URL: {self.base_url}")
     
-    async def get_available_strategies(self) -> List[Dict[str, str]]:
+    async def get_available_strategies(self) -> List[Dict[str, Any]]:
         """
-        Get list of available RAG strategies.
+        Get list of available RAG strategies with full information.
         
         Returns:
-            List of strategy dictionaries with type, name, description
+            List of strategy dictionaries with type, name, description, use_cases, requirements
             
         Example:
             [
                 {
                     "type": "basic",
                     "name": "Basic RAG",
-                    "description": "Fast, simple retrieval"
+                    "description": "Fast, simple retrieval",
+                    "use_cases": ["Simple Q&A", "Fast responses"],
+                    "requirements": {"api_keys": [], "complexity": "low"}
                 },
                 ...
             ]
@@ -44,7 +48,7 @@ class APIClient:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(
-                    f"{self.base_url}/api/v1/nlp/rag/strategies"
+                    f"{self.base_url}/api/v1/nlp/strategies/info"
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -63,6 +67,47 @@ class APIClient:
             logger.error(f"Unexpected error fetching strategies: {e}")
             return self._get_default_strategies()
     
+    async def get_strategy_recommendations(
+        self,
+        query: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Get AI-powered strategy recommendations for a query.
+        
+        Args:
+            query: User's question
+            
+        Returns:
+            List of recommended strategies with scores and reasoning
+            
+        Example:
+            [
+                {
+                    "strategy": "web_search",
+                    "score": 0.95,
+                    "reasoning": "Recent information needed",
+                    "info": {...}
+                },
+                ...
+            ]
+        """
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/nlp/strategies/recommend",
+                    params={"query": query}
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                recommendations = data.get("recommendations", [])
+                logger.info(f"Got {len(recommendations)} strategy recommendations")
+                return recommendations
+                
+        except Exception as e:
+            logger.error(f"Error getting recommendations: {e}")
+            return []
+    
     async def send_message(
         self,
         project_id: int,
@@ -70,21 +115,25 @@ class APIClient:
         session_id: str,
         rag_type: str = "basic",
         limit: int = 10,
-        chat_history_limit: int = 10
+        chat_history_limit: int = 10,
+        evaluate: bool = False,
+        ground_truth: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Send a message and get RAG-based response.
+        Send a message and get RAG-based response with optional evaluation.
         
         Args:
             project_id: Project identifier
             text: User's message
             session_id: Chat session ID
-            rag_type: RAG strategy to use (basic/fusion/rerank)
+            rag_type: RAG strategy (basic/fusion/rerank/sentence_window/auto_merging/web_search)
             limit: Number of documents to retrieve
             chat_history_limit: Max chat history messages to include
+            evaluate: Enable comprehensive RAG evaluation
+            ground_truth: Optional reference answer for evaluation
             
         Returns:
-            Response dictionary with answer, strategy, session info, etc.
+            Response dictionary with answer, strategy, evaluation (if enabled)
             
         Raises:
             APIError: If request fails
@@ -94,9 +143,14 @@ class APIClient:
                 "signal": "RAG_ANSWER_SUCCESS",
                 "answer": "Python is a programming language...",
                 "session_id": "abc-123",
-                "rag_strategy": "Basic RAG",
-                "rag_type": "basic",
-                "chat_history_length": 2
+                "rag_strategy": "Sentence Window RAG",
+                "rag_type": "sentence_window",
+                "chat_history_length": 2,
+                "evaluation": {  # if evaluate=true
+                    "overall_score": 0.85,
+                    "metrics": {...},
+                    "summary": "..."
+                }
             }
         """
         try:
@@ -105,10 +159,17 @@ class APIClient:
                 "session_id": session_id,
                 "rag_type": rag_type,
                 "limit": limit,
-                "chat_history_limit": chat_history_limit
+                "chat_history_limit": chat_history_limit,
+                "evaluate": evaluate
             }
             
-            logger.info(f"Sending message to API: project={project_id}, rag_type={rag_type}")
+            if ground_truth:
+                payload["ground_truth"] = ground_truth
+            
+            logger.info(
+                f"Sending message to API: project={project_id}, "
+                f"rag_type={rag_type}, evaluate={evaluate}"
+            )
             
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -132,6 +193,110 @@ class APIClient:
             logger.error(f"Unexpected error: {e}")
             raise APIError(f"Unexpected error: {str(e)}")
     
+    async def evaluate_response(
+        self,
+        project_id: int,
+        query: str,
+        answer: str,
+        retrieved_documents: List[str],
+        strategy_name: Optional[str] = None,
+        ground_truth: Optional[str] = None,
+        metrics: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Evaluate an existing RAG response.
+        
+        Args:
+            project_id: Project identifier
+            query: Original query
+            answer: Generated answer
+            retrieved_documents: Retrieved document texts
+            strategy_name: Strategy used
+            ground_truth: Optional reference answer
+            metrics: Specific metrics to evaluate (None = all)
+            
+        Returns:
+            Evaluation report with all metrics
+            
+        Example Response:
+            {
+                "signal": "EVALUATION_SUCCESS",
+                "evaluation": {
+                    "overall_score": 0.85,
+                    "metrics": {
+                        "answer_relevance": {...},
+                        "context_relevance": {...},
+                        "groundedness": {...},
+                        ...
+                    },
+                    "summary": "..."
+                }
+            }
+        """
+        try:
+            payload = {
+                "query": query,
+                "answer": answer,
+                "retrieved_documents": retrieved_documents,
+                "strategy_name": strategy_name,
+                "ground_truth": ground_truth,
+                "metrics": metrics
+            }
+            
+            logger.info(f"Evaluating response for project {project_id}")
+            
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/nlp/evaluate/response/{project_id}",
+                    json=payload
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                logger.info("Evaluation completed successfully")
+                return data
+                
+        except Exception as e:
+            logger.error(f"Error evaluating response: {e}")
+            raise APIError(f"Evaluation failed: {str(e)}")
+    
+    async def batch_evaluate(
+        self,
+        project_id: int,
+        evaluation_data: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Batch evaluate multiple RAG responses.
+        
+        Args:
+            project_id: Project identifier
+            evaluation_data: List of evaluation data dictionaries
+            
+        Returns:
+            Batch evaluation results with aggregate metrics
+        """
+        try:
+            payload = {
+                "evaluation_data": evaluation_data
+            }
+            
+            logger.info(f"Batch evaluating {len(evaluation_data)} responses")
+            
+            async with httpx.AsyncClient(timeout=self.timeout * 2) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/nlp/evaluate/batch/{project_id}",
+                    json=payload
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                logger.info("Batch evaluation completed")
+                return data
+                
+        except Exception as e:
+            logger.error(f"Error in batch evaluation: {e}")
+            raise APIError(f"Batch evaluation failed: {str(e)}")
+    
     async def get_chat_sessions(
         self,
         project_id: int,
@@ -146,9 +311,6 @@ class APIClient:
             
         Returns:
             List of session IDs
-            
-        Example:
-            ["session-abc-123", "session-def-456", ...]
         """
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -210,7 +372,7 @@ class APIClient:
         except Exception:
             return False
     
-    def _get_default_strategies(self) -> List[Dict[str, str]]:
+    def _get_default_strategies(self) -> List[Dict[str, Any]]:
         """
         Fallback strategies if API is unavailable.
         
@@ -221,18 +383,44 @@ class APIClient:
         return [
             {
                 "type": "basic",
-                "name": "Basic RAG",
-                "description": "Fast, simple retrieval - Best for straightforward questions"
+                "description": "Simple vector similarity search - Fast and reliable",
+                "use_cases": ["Simple Q&A", "Well-defined queries", "Fast responses needed"],
+                "requirements": {"api_keys": [], "complexity": "low", "avg_latency_ms": 200}
             },
             {
                 "type": "fusion",
-                "name": "Fusion RAG",
-                "description": "Query expansion with multiple searches - Better accuracy"
+                "description": "Query expansion with result fusion - Better for complex queries",
+                "use_cases": ["Complex queries", "Multi-perspective questions"],
+                "requirements": {"api_keys": [], "complexity": "medium", "avg_latency_ms": 500}
             },
             {
                 "type": "rerank",
-                "name": "Gemini ReRank",
-                "description": "Two-stage retrieval with reranking - Highest precision (FREE)"
+                "description": "Two-stage retrieval with reranking - High precision",
+                "use_cases": ["High precision required", "Complex technical documentation"],
+                "requirements": {"api_keys": [], "complexity": "medium", "avg_latency_ms": 600}
+            },
+            {
+                "type": "sentence_window",
+                "description": "Sentence-level retrieval with context window - Focused and precise",
+                "use_cases": ["Precise factual queries", "Detailed documentation"],
+                "requirements": {"api_keys": [], "complexity": "medium", "avg_latency_ms": 400}
+            },
+            {
+                "type": "auto_merging",
+                "description": "Hierarchical retrieval with smart merging - Maintains document structure",
+                "use_cases": ["Structured content", "Technical documentation"],
+                "requirements": {"api_keys": [], "complexity": "high", "avg_latency_ms": 450}
+            },
+            {
+                "type": "web_search",
+                "description": "Hybrid vector + web search - Access to real-time information",
+                "use_cases": ["Current events", "Recent information", "Fact verification"],
+                "requirements": {
+                    "api_keys": ["tavily_api_key"],
+                    "complexity": "medium",
+                    "avg_latency_ms": 800,
+                    "external_dependencies": ["Tavily API"]
+                }
             }
         ]
 
