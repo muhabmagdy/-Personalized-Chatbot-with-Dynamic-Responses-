@@ -1,7 +1,7 @@
 # routes/schemes/nlp.py
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Dict
 from models.enums.RAGTypeEnum import RAGTypeEnum
 
 class PushProjectRequest(BaseModel):
@@ -71,6 +71,14 @@ class AnswerRAGRequest(BaseModel):
         le=50,
         description="Maximum number of previous messages to include in context"
     )
+
+    evaluate: Optional[bool] = Field(
+        False,
+        description="Enable RAG evaluation")
+    
+    ground_truth: Optional[str] = Field(
+        None,
+          description="Reference answer for evaluation")
     
     class Config:
         schema_extra = {
@@ -79,6 +87,22 @@ class AnswerRAGRequest(BaseModel):
                 "limit": 10,
                 "session_id": "user-123-conversation-1",
                 "rag_type": "basic",
-                "chat_history_limit": 10
+                "chat_history_limit": 10,
+                "evaluate": False,
+                "ground_truth": "optional reference answer" #need to be revised
             }
         }
+
+class EvaluateRAGRequest(BaseModel):
+    """Request model for evaluating existing RAG response."""
+    query: str = Field(..., description="Original query")
+    answer: str = Field(..., description="Generated answer")
+    retrieved_documents: List[str] = Field(..., description="Retrieved document texts")
+    strategy_name: Optional[str] = Field(None, description="Strategy used")
+    ground_truth: Optional[str] = Field(None, description="Reference answer")
+    metrics: Optional[List[str]] = Field(None, description="Specific metrics to evaluate")
+
+
+class BatchEvaluateRequest(BaseModel):
+    """Request model for batch evaluation."""
+    evaluation_data: List[Dict] = Field(..., description="List of evaluation data")

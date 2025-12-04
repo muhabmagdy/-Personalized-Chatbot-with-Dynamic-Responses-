@@ -4,7 +4,9 @@ from routes.schemes.nlp import (
     PushProjectRequest, 
     PushAssetRequest, 
     SearchRequest,
-    AnswerRAGRequest  # NEW: Extended request model
+    AnswerRAGRequest,
+    EvaluateRAGRequest,
+    BatchEvaluateRequest
 )
 from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
@@ -26,7 +28,7 @@ nlp_router = APIRouter(
 )
 
 # Helper function to create NLP controller with chat memory
-def create_nlp_controller(request: Request) -> NLPController:
+def create_nlp_controller(request: Request, enable_evaluation:bool = False) -> NLPController:
     """
     Factory function to create NLP controller with all dependencies.
     """
@@ -37,7 +39,8 @@ def create_nlp_controller(request: Request) -> NLPController:
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
-        chat_memory=chat_memory
+        chat_memory=chat_memory,
+        enable_evaluation=enable_evaluation
     )
 
 # ==========================================
@@ -334,13 +337,17 @@ async def answer_rag(
     answer_request: AnswerRAGRequest
 ):
     """
-    Answer RAG question with chat memory and multiple RAG strategies.
+    Answer RAG question with chat memory, multiple RAG strategies and optional comprehensive evaluation.
     
     NEW FEATURES:
     - Chat memory (persistent conversation history)
     - Multiple RAG strategies (basic/fusion/rerank)
     - Session management
     - Automatic session ID generation
+    - Multiple advanced RAG strategies
+    - Optional automatic evaluation
+    - Performance metrics
+    - Strategy recommendations
     
     Request Body:
         {
@@ -348,7 +355,25 @@ async def answer_rag(
             "limit": 10,
             "session_id": "optional-session-id",  # Auto-generated if not provided
             "rag_type": "basic",  # Options: basic, fusion, rerank
-            "chat_history_limit": 10  # Max messages from history to include
+            "chat_history_limit": 10,  # Max messages from history to include
+            "evaluate": false,  # Enable evaluation
+            "ground_truth": "optional reference answer"
+        }
+        
+    Response:
+        {
+            "signal": "RAG_ANSWER_SUCCESS",
+            "answer": "Generated answer",
+            "session_id": "session-uuid",
+            "rag_strategy": "Strategy name",
+            "rag_type": "basic",
+            "full_prompt": "Complete prompt used",
+            "chat_history_length": 5,
+            "evaluation": {  # Only if evaluate=true
+                "overall_score": 0.85,
+                "metrics": {...},
+                "summary": "..."
+            }
         }
     """
     project_model = await ProjectModel.create_instance(
@@ -364,10 +389,11 @@ async def answer_rag(
     
     # Generate session ID if not provided
     session_id = answer_request.session_id or str(uuid.uuid4())
-    
+
     # Validate RAG type
     rag_type = answer_request.rag_type or RAGTypeEnum.BASIC.value
-    if rag_type not in [e.value for e in RAGTypeEnum]:
+    available_strategies = [e.value for e in RAGTypeEnum]
+    if rag_type not in available_strategies:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
@@ -377,33 +403,251 @@ async def answer_rag(
             }
         )
     
-    nlp_controller = create_nlp_controller(request)
+    nlp_controller = create_nlp_controller(request, enable_evaluation=answer_request.evaluate)
     
-    # Execute RAG with strategy and chat memory
-    answer, full_prompt, chat_history, strategy_name = await nlp_controller.answer_rag_question(
+    # Execute RAG with strategy, chat memory and optional evaluation
+    result = await nlp_controller.answer_rag_question_with_evaluation(
         project=project,
         query=answer_request.text,
         session_id=session_id,
         limit=answer_request.limit,
         rag_type=rag_type,
-        chat_history_limit=answer_request.chat_history_limit
+        chat_history_limit=answer_request.chat_history_limit,
+        ground_truth=answer_request.ground_truth,
+        evaluate_response=answer_request.evaluate
     )
-
+    
+    answer, full_prompt, chat_history, strategy_name, evaluation_report = result
+    
     if not answer:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"signal": ResponseSignal.RAG_ANSWER_ERROR.value}
         )
     
+    # Build response
+    response_data = {
+        "signal": ResponseSignal.RAG_ANSWER_SUCCESS.value,
+        "answer": answer,
+        "session_id": session_id,
+        "rag_strategy": strategy_name,
+        "rag_type": rag_type,
+        "full_prompt": full_prompt,
+        "chat_history_length": len(chat_history)
+    }
+    
+    # Add evaluation if performed
+    if evaluation_report and nlp_controller.enable_evaluation:
+        response_data["evaluation"] = nlp_controller.evaluation_service.format_report_for_ui(
+            evaluation_report
+        )
+    
+    return JSONResponse(content=response_data)
+
+@nlp_router.post("/evaluate/response/{project_id}")
+async def evaluate_rag_response(
+    request: Request,
+    project_id: int,
+    eval_request: EvaluateRAGRequest
+):
+    """
+    Evaluate an existing RAG response.
+    
+    Use Cases:
+    - Evaluate historical responses
+    - A/B test different strategies
+    - Quality monitoring
+    
+    Request Body:
+        {
+            "query": "Original question",
+            "answer": "Generated answer",
+            "retrieved_documents": ["doc1", "doc2", ...],
+            "strategy_name": "Basic RAG",
+            "ground_truth": "optional reference",
+            "metrics": ["answer_relevance", "groundedness"]  # Optional, defaults to all
+        }
+    
+    Response:
+        {
+            "signal": "EVALUATION_SUCCESS",
+            "evaluation": {
+                "overall_score": 0.85,
+                "metrics": {
+                    "answer_relevance": {...},
+                    "context_relevance": {...},
+                    "groundedness": {...}
+                },
+                "summary": "..."
+            }
+        }
+    """
+    nlp_controller = create_nlp_controller(request, enable_evaluation=True)
+    
+    try:
+        evaluation_report = await nlp_controller.evaluate_existing_response(
+            query=eval_request.query,
+            answer=eval_request.answer,
+            retrieved_documents=eval_request.retrieved_documents,
+            strategy_name=eval_request.strategy_name,
+            ground_truth=eval_request.ground_truth,
+            metrics=eval_request.metrics
+        )
+        
+        return JSONResponse(
+            content={
+                "signal": "EVALUATION_SUCCESS",
+                "evaluation": nlp_controller.evaluation_service.format_report_for_ui(
+                    evaluation_report
+                )
+            }
+        )
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "signal": "EVALUATION_ERROR",
+                "message": str(e)
+            }
+        )
+
+
+@nlp_router.post("/evaluate/batch/{project_id}")
+async def batch_evaluate_responses(
+    request: Request,
+    project_id: int,
+    batch_request: BatchEvaluateRequest
+):
+    """
+    Batch evaluate multiple RAG responses.
+    
+    Use Cases:
+    - Evaluate test dataset
+    - Compare strategies at scale
+    - Generate performance reports
+    
+    Request Body:
+        {
+            "evaluation_data": [
+                {
+                    "query": "Question 1",
+                    "answer": "Answer 1",
+                    "retrieved_documents": [...],
+                    "strategy_name": "Basic RAG",
+                    "ground_truth": "Reference 1"
+                },
+                ...
+            ]
+        }
+    
+    Response:
+        {
+            "signal": "BATCH_EVALUATION_SUCCESS",
+            "total_evaluated": 10,
+            "average_score": 0.82,
+            "evaluations": [...]
+        }
+    """
+    nlp_controller = create_nlp_controller(request, enable_evaluation=True)
+    
+    try:
+        reports = await nlp_controller.batch_evaluate_responses(
+            evaluation_data=batch_request.evaluation_data
+        )
+        
+        # Calculate aggregate metrics
+        avg_score = sum(r.overall_score for r in reports) / len(reports) if reports else 0.0
+        
+        # Format reports for UI
+        formatted_reports = [
+            nlp_controller.evaluation_service.format_report_for_ui(report)
+            for report in reports
+        ]
+        
+        return JSONResponse(
+            content={
+                "signal": "BATCH_EVALUATION_SUCCESS",
+                "total_evaluated": len(reports),
+                "average_score": round(avg_score, 2),
+                "evaluations": formatted_reports
+            }
+        )
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "signal": "BATCH_EVALUATION_ERROR",
+                "message": str(e)
+            }
+        )
+
+
+@nlp_router.get("/strategies/info")
+async def get_strategies_info(request: Request):
+    """
+    Get information about all available RAG strategies.
+    
+    Response:
+        {
+            "strategies": [
+                {
+                    "type": "basic",
+                    "description": "...",
+                    "use_cases": [...],
+                    "requirements": {...}
+                },
+                ...
+            ]
+        }
+    """
+    nlp_controller = create_nlp_controller(request)
+    
+    strategies_info = [
+        nlp_controller.rag_factory.get_strategy_info(strategy.value)
+        for strategy in RAGTypeEnum
+    ]
+    
     return JSONResponse(
         content={
-            "signal": ResponseSignal.RAG_ANSWER_SUCCESS.value,
-            "answer": answer,
-            "session_id": session_id,
-            "rag_strategy": strategy_name,
-            "rag_type": rag_type,
-            "full_prompt": full_prompt,
-            "chat_history_length": len(chat_history)
+            "signal": "SUCCESS",
+            "strategies": strategies_info
+        }
+    )
+
+
+@nlp_router.post("/strategies/recommend")
+async def recommend_strategy(request: Request, query: str):
+    """
+    Get strategy recommendations for a query.
+    
+    Query Params:
+        query: User's question
+    
+    Response:
+        {
+            "signal": "SUCCESS",
+            "recommendations": [
+                {
+                    "strategy": "web_search",
+                    "score": 0.95,
+                    "reasoning": "...",
+                    "info": {...}
+                },
+                ...
+            ]
+        }
+    """
+    nlp_controller = create_nlp_controller(request)
+    
+    recommendations = nlp_controller.get_strategy_recommendations(query=query)
+    
+    return JSONResponse(
+        content={
+            "signal": "SUCCESS",
+            "query": query,
+            "recommendations": recommendations
         }
     )
 

@@ -5,6 +5,9 @@ from typing import List, Optional, Dict, Tuple
 from services.rag_strategies.RAGStrategyFactory import RAGStrategyFactory
 from services.chat_memory.ChatMemoryInterface import ChatMemoryInterface
 from models.enums.RAGTypeEnum import RAGTypeEnum
+from services.rag_evaluation.RAGEvaluationService import RAGEvaluationService
+from models.dtos.RAGEvaluationReport import RAGEvaluationReport
+
 import json
 import typing
 import gc
@@ -16,6 +19,7 @@ EMBEDDING_BATCH_SIZE = 500
 class NLPController(BaseController):
     """
     Refactored NLP Controller using Strategy Pattern for RAG.
+    NLP Controller with integrated RAG evaluation.
     
     SOLID Principles Applied:
     - Single Responsibility: Each method has one clear purpose
@@ -23,6 +27,12 @@ class NLPController(BaseController):
     - Liskov Substitution: All RAG strategies are interchangeable
     - Interface Segregation: Clean interfaces for strategies and chat memory
     - Dependency Inversion: Depends on abstractions (interfaces), not concrete implementations
+    
+    New Features:
+    - Comprehensive RAG evaluation
+    - Multiple advanced RAG strategies
+    - Evaluation report generation
+    - MLflow integration support
     """
 
     def __init__(
@@ -31,8 +41,16 @@ class NLPController(BaseController):
         generation_client, 
         embedding_client, 
         template_parser,
-        chat_memory: ChatMemoryInterface
+        chat_memory: ChatMemoryInterface,
+        enable_evaluation: bool = False
     ):
+        """
+        Initialize controller with optional evaluation.
+        
+        Args:
+            enable_evaluation: Enable automatic RAG evaluation (default: False)
+        """
+
         super().__init__()
 
         self.vectordb_client = vectordb_client
@@ -49,6 +67,17 @@ class NLPController(BaseController):
             embedding_client=embedding_client,
             template_parser=template_parser
         )
+
+        # Initialize evaluation service
+        self.enable_evaluation = enable_evaluation
+        if enable_evaluation:
+            self.evaluation_service = RAGEvaluationService(
+                llm_client=self.generation_client,
+                embedding_client=self.embedding_client,
+                enable_all_metrics=True
+            )
+            self.logger.info("RAG evaluation service initialized")
+
 
     def create_collection_name(self, project_id: int):
         return f"collection_{self.vectordb_client.default_vector_size}_{project_id}".strip()
@@ -317,3 +346,227 @@ class NLPController(BaseController):
             project_id=project_id,
             limit=limit
         )
+    
+    async def answer_rag_question_with_evaluation(
+        self, 
+        project: Project, 
+        query: str, 
+        session_id: str,
+        limit: Optional[int] = 10,
+        rag_type: str = RAGTypeEnum.BASIC.value,
+        chat_history_limit: Optional[int] = 10,
+        ground_truth: Optional[str] = None,
+        evaluate_response: bool = True
+    ) -> Tuple[Optional[str], str, List[Dict[str, str]], str, Optional[RAGEvaluationReport]]:
+        """
+        Answer RAG question with optional comprehensive evaluation.
+        
+        This method extends the original answer_rag_question with:
+        - Automatic RAG evaluation
+        - Performance metrics
+        - Quality assessment
+        
+        Args:
+            project: Project entity
+            query: User's question
+            session_id: Chat session identifier
+            limit: Number of documents to retrieve
+            rag_type: Type of RAG strategy to use
+            chat_history_limit: Maximum chat history messages
+            ground_truth: Optional reference answer for evaluation
+            evaluate_response: Whether to evaluate the response
+            
+        Returns:
+            Tuple of (answer, full_prompt, chat_history, strategy_name, evaluation_report)
+        """
+        final_limit = limit if limit is not None else 10
+        project_id = typing.cast(int, project.project_id)
+        
+        # Step 1: Get answer using RAG
+        answer, full_prompt, chat_history, strategy_name = await self.answer_rag_question(
+            project=project,
+            query=query,
+            session_id=session_id,
+            limit=final_limit,
+            rag_type=rag_type,
+            chat_history_limit=chat_history_limit
+        )
+        
+        # Step 2: Evaluate if enabled and answer was generated
+        evaluation_report = None
+        
+        if evaluate_response and self.enable_evaluation and answer:
+            try:
+                # Get retrieved documents from the strategy
+                strategy = self.rag_factory.create_strategy(rag_type=rag_type)
+                retrieved_docs = await strategy.retrieve_documents(
+                    query=query,
+                    project=project,
+                    limit=final_limit
+                )
+                
+                doc_texts = [doc.text for doc in retrieved_docs]
+                
+                # Perform evaluation
+                evaluation_report = await self.evaluation_service.evaluate_rag_response(
+                    query=query,
+                    answer=answer,
+                    retrieved_documents=doc_texts,
+                    strategy_name=strategy_name,
+                    ground_truth=ground_truth
+                )
+                
+                self.logger.info(
+                    f"Evaluation complete: Overall score = {evaluation_report.overall_score:.2f}"
+                )
+                
+            except Exception as e:
+                self.logger.error(f"Evaluation failed: {e}")
+                evaluation_report = None
+        
+        return answer, full_prompt, chat_history, strategy_name, evaluation_report
+    
+    async def evaluate_existing_response(
+        self,
+        query: str,
+        answer: str,
+        retrieved_documents: List[str],
+        strategy_name: Optional[str] = None,
+        ground_truth: Optional[str] = None,
+        metrics: Optional[List[str]] = None
+    ) -> RAGEvaluationReport:
+        """
+        Evaluate an existing RAG response.
+        
+        Useful for:
+        - Batch evaluation of historical responses
+        - A/B testing different strategies
+        - Performance monitoring
+        
+        Args:
+            query: Original query
+            answer: Generated answer
+            retrieved_documents: Retrieved document texts
+            strategy_name: Strategy used
+            ground_truth: Optional reference answer
+            metrics: Specific metrics to evaluate (None = all)
+            
+        Returns:
+            RAGEvaluationReport
+        """
+        if not self.enable_evaluation:
+            raise ValueError("Evaluation service not initialized. Set enable_evaluation=True")
+        
+        return await self.evaluation_service.evaluate_rag_response(
+            query=query,
+            answer=answer,
+            retrieved_documents=retrieved_documents,
+            strategy_name=strategy_name,
+            ground_truth=ground_truth,
+            metrics_to_evaluate=metrics
+        )
+    
+    async def batch_evaluate_responses(
+        self,
+        evaluation_data: List[Dict]
+    ) -> List[RAGEvaluationReport]:
+        """
+        Batch evaluate multiple RAG responses.
+        
+        Args:
+            evaluation_data: List of dicts with keys:
+                - query: str
+                - answer: str
+                - retrieved_documents: List[str]
+                - strategy_name: Optional[str]
+                - ground_truth: Optional[str]
+        
+        Returns:
+            List of RAGEvaluationReports
+        """
+        if not self.enable_evaluation:
+            raise ValueError("Evaluation service not initialized")
+        
+        reports = []
+        
+        for idx, data in enumerate(evaluation_data):
+            try:
+                self.logger.info(f"Evaluating response {idx + 1}/{len(evaluation_data)}")
+                
+                report = await self.evaluation_service.evaluate_rag_response(
+                    query=data["query"],
+                    answer=data["answer"],
+                    retrieved_documents=data["retrieved_documents"],
+                    strategy_name=data.get("strategy_name"),
+                    ground_truth=data.get("ground_truth")
+                )
+                
+                reports.append(report)
+                
+            except Exception as e:
+                self.logger.error(f"Batch evaluation failed for item {idx}: {e}")
+        
+        return reports
+    
+    def get_strategy_recommendations(
+        self,
+        query: str,
+        context: Optional[Dict] = None
+    ) -> List[Dict]:
+        """
+        Get strategy recommendations based on query characteristics.
+        
+        Args:
+            query: User's question
+            context: Optional context (e.g., user preferences, history)
+            
+        Returns:
+            List of recommended strategies with reasoning
+        """
+        recommendations = []
+        
+        # Analyze query
+        query_lower = query.lower()
+        is_recent_query = any(word in query_lower for word in ["recent", "latest", "current", "today", "now"])
+        is_complex_query = len(query.split()) > 15
+        is_factual_query = any(word in query_lower for word in ["what is", "define", "explain"])
+        
+        # Basic RAG - Always a safe choice
+        recommendations.append({
+            "strategy": RAGTypeEnum.BASIC.value,
+            "score": 0.7,
+            "reasoning": "Fast and reliable for most queries",
+            "info": self.rag_factory.get_strategy_info(RAGTypeEnum.BASIC.value)
+        })
+        
+        # Fusion RAG - For complex queries
+        if is_complex_query:
+            recommendations.append({
+                "strategy": RAGTypeEnum.FUSION.value,
+                "score": 0.9,
+                "reasoning": "Complex query detected - multiple perspectives helpful",
+                "info": self.rag_factory.get_strategy_info(RAGTypeEnum.FUSION.value)
+            })
+        
+        # Web Search RAG - For recent information
+        if is_recent_query:
+            recommendations.append({
+                "strategy": RAGTypeEnum.WEB_SEARCH.value,
+                "score": 0.95,
+                "reasoning": "Recent information needed - web search recommended",
+                "info": self.rag_factory.get_strategy_info(RAGTypeEnum.WEB_SEARCH.value)
+            })
+        
+        # Sentence Window RAG - For precise factual queries
+        if is_factual_query:
+            recommendations.append({
+                "strategy": RAGTypeEnum.SENTENCE_WINDOW.value,
+                "score": 0.85,
+                "reasoning": "Factual query - focused retrieval recommended",
+                "info": self.rag_factory.get_strategy_info(RAGTypeEnum.SENTENCE_WINDOW.value)
+            })
+        
+        # Sort by score
+        recommendations.sort(key=lambda x: x["score"], reverse=True)
+        
+        return recommendations[:3]  # Top 3 recommendations
