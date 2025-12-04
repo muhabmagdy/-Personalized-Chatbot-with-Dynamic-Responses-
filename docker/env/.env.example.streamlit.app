@@ -6,7 +6,8 @@
 # API Configuration
 # ==========================================
 # Backend API base URL (where your FastAPI server is running)
-API_BASE_URL=""
+API_BASE_URL="http://localhost:8000"
+
 # API request timeout in seconds
 API_TIMEOUT=30.0
 
@@ -19,7 +20,7 @@ DEFAULT_PROJECT_ID=1
 # ==========================================
 # RAG Configuration
 # ==========================================
-# Default RAG strategy: basic, fusion, rerank
+# Default RAG strategy: basic, fusion, rerank, sentence_window, auto_merging, web_search
 DEFAULT_RAG_TYPE=basic
 
 # Default number of documents to retrieve
@@ -32,7 +33,7 @@ DEFAULT_HISTORY_LIMIT=10
 # Display Configuration
 # ==========================================
 # Maximum message length to display
-MAX_MESSAGE_LENGTH=2000
+MAX_MESSAGE_LENGTH=5000
 
 # Show debug information (true/false)
 SHOW_DEBUG_INFO=false
@@ -68,11 +69,23 @@ ENABLE_RESPONSE_METADATA=true
 # NOTES
 # ==========================================
 # 
-# Update API_BASE_URL to match your backend server
-# Adjust other settings as needed
+# Quick Setup:
+# 1. Copy this file to .env
+# 2. Update API_BASE_URL to your backend URL
+# 3. Configure other settings as needed
+#
+# Available RAG Strategies:
+# - basic: Fast vector search
+# - fusion: Query expansion with RRF
+# - rerank: Two-stage reranking
+# - sentence_window: Sentence-level retrieval
+# - auto_merging: Hierarchical merging
+# - web_search: Hybrid with web search (requires Tavily API key in backend)
 #
 # For production:
 # - Use environment-specific .env files
 # - Set API_BASE_URL to your production API
 # - Disable debug mode
+# - Configure proper logging
+#
 # ==========================================
