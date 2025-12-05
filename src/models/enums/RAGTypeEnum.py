@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Dict
+from helpers.config import get_settings
 
 class RAGTypeEnum(Enum):
     """
@@ -97,6 +98,7 @@ class RAGTypeEnum(Enum):
     @classmethod
     def get_requirements(cls, rag_type: str) -> Dict[str, any]:
         """Get requirements and configuration for each strategy."""
+        settings = get_settings()
         requirements = {
             cls.BASIC.value: {
                 "api_keys": [],
@@ -129,7 +131,7 @@ class RAGTypeEnum(Enum):
                 "cost_per_query": "medium"
             },
             cls.WEB_SEARCH.value: {
-                "api_keys": ["tavily_api_key"],
+                "api_keys": [settings.TAVILY_API_KEY],
                 "complexity": "medium",
                 "avg_latency_ms": 800,
                 "cost_per_query": "medium-high",
