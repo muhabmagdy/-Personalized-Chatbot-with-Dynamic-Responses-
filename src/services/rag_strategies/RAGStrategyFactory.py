@@ -167,7 +167,7 @@ class RAGStrategyFactory:
                 web_params = {**common_deps}
                 
                 # Get API key from kwargs or config
-                tavily_key = kwargs.get("tavily_api_key") or self.config.get("tavily_api_key") or self.settings.ta
+                tavily_key = kwargs.get("tavily_api_key") or self.config.get("tavily_api_key") or self.settings.TAVILY_API_KEY
                 
                 if not tavily_key:
                     self.logger.warning(
