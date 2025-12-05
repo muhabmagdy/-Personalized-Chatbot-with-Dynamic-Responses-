@@ -7,6 +7,7 @@ from .AutoMergingRAGStrategy import AutoMergingRAGStrategy
 from .WebSearchRAGStrategy import WebSearchRAGStrategy
 from models.enums.RAGTypeEnum import RAGTypeEnum
 from typing import Optional, List, Dict
+from helpers.config import get_settings
 import logging
 
 
@@ -54,6 +55,7 @@ class RAGStrategyFactory:
         self.template_parser = template_parser
         self.config = config or {}
         self.logger = logging.getLogger("uvicorn")
+        self.settings = get_settings()
     
     def create_strategy(
         self, 
@@ -165,7 +167,7 @@ class RAGStrategyFactory:
                 web_params = {**common_deps}
                 
                 # Get API key from kwargs or config
-                tavily_key = kwargs.get("tavily_api_key") or self.config.get("tavily_api_key")
+                tavily_key = kwargs.get("tavily_api_key") or self.config.get("tavily_api_key") or self.settings.ta
                 
                 if not tavily_key:
                     self.logger.warning(
