@@ -104,10 +104,8 @@ class ChatInterface:
             - **Web Search** - Real-time information (🌐) *[Requires API key]*
             
             **💡 Features:**
-            - 📊 Real-time quality evaluation
             - 🎯 Strategy recommendations
             - 💾 Persistent chat sessions
-            - 📈 Comprehensive metrics
             
             **Ready to start? Ask me anything!** 🚀
             """)
