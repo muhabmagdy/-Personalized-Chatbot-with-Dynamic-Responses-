@@ -103,7 +103,7 @@ class NLPController(BaseController):
         )
     
     # ==========================================
-    # OPTIMIZED INDEXING (UNCHANGED)
+    # OPTIMIZED INDEXING
     # ==========================================
 
     async def index_into_vector_db(
@@ -187,7 +187,7 @@ class NLPController(BaseController):
         return results
     
     # ==========================================
-    # NEW: STRATEGY-BASED RAG WITH CHAT MEMORY
+    # STRATEGY-BASED RAG WITH CHAT MEMORY
     # ==========================================
     
     async def answer_rag_question(
@@ -380,7 +380,6 @@ class NLPController(BaseController):
             Tuple of (answer, full_prompt, chat_history, strategy_name, evaluation_report)
         """
         final_limit = limit if limit is not None else 10
-        project_id = typing.cast(int, project.project_id)
         
         # Step 1: Get answer using RAG
         answer, full_prompt, chat_history, strategy_name = await self.answer_rag_question(

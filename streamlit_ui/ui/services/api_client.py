@@ -114,8 +114,8 @@ class APIClient:
         text: str,
         session_id: str,
         rag_type: str = "basic",
-        limit: int = 10,
-        chat_history_limit: int = 10,
+        limit: int = 3,
+        chat_history_limit: int = 3,
         evaluate: bool = False,
         ground_truth: Optional[str] = None
     ) -> Dict[str, Any]:

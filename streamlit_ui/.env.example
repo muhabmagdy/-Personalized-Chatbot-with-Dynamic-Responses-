@@ -24,10 +24,10 @@ DEFAULT_PROJECT_ID=1
 DEFAULT_RAG_TYPE=basic
 
 # Default number of documents to retrieve
-DEFAULT_DOC_LIMIT=10
+DEFAULT_DOC_LIMIT=3
 
 # Default chat history limit
-DEFAULT_HISTORY_LIMIT=10
+DEFAULT_HISTORY_LIMIT=3
 
 # ==========================================
 # Display Configuration

@@ -84,10 +84,10 @@ class AnswerRAGRequest(BaseModel):
         schema_extra = {
             "example": {
                 "text": "What are the main features of Python?",
-                "limit": 10,
+                "limit": 3,
                 "session_id": "user-123-conversation-1",
                 "rag_type": "basic",
-                "chat_history_limit": 10,
+                "chat_history_limit": 3,
                 "evaluate": False,
                 "ground_truth": "optional reference answer" #need to be revised
             }

@@ -99,8 +99,8 @@ The UI will open at `http://localhost:8501`
 ### Advanced Settings
 
 Click "Advanced Settings" in the sidebar to configure:
-- **Documents to Retrieve**: 5-50 (default: 10)
-- **Chat History Limit**: 0-50 (default: 10)
+- **Documents to Retrieve**: 5-50 (default: 3)
+- **Chat History Limit**: 0-50 (default: 3)
 
 ### Session Management
 

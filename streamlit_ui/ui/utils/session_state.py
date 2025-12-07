@@ -44,8 +44,8 @@ class SessionStateManager:
         
         # RAG configuration
         self._init_if_not_exists(self.KEY_RAG_TYPE, 'basic')
-        self._init_if_not_exists(self.KEY_DOC_LIMIT, 10)
-        self._init_if_not_exists(self.KEY_HISTORY_LIMIT, 10)
+        self._init_if_not_exists(self.KEY_DOC_LIMIT, 3)
+        self._init_if_not_exists(self.KEY_HISTORY_LIMIT, 3)
         
         # Cache
         self._init_if_not_exists(self.KEY_STRATEGIES, None)

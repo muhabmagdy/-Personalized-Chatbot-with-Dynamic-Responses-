@@ -237,7 +237,7 @@ class SentenceWindowRAGStrategy(RAGStrategyInterface):
                 prompt=rerank_prompt,
                 chat_history=[],
                 temperature=0.1,
-                max_output_tokens=100
+                max_output_tokens=1000
             )
             
             if not response:

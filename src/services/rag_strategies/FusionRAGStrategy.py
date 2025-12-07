@@ -148,9 +148,9 @@ class FusionRAGStrategy(RAGStrategyInterface):
         """
         prompt = f"""Given the following question, generate {self.num_queries - 1} alternative phrasings that capture the same intent but use different wording.
 
-Original question: {original_query}
+                Original question: {original_query}
 
-Generate {self.num_queries - 1} variations (one per line):"""
+                Generate {self.num_queries - 1} variations (one per line):"""
         
         try:
             response = self.generation_client.generate_text(

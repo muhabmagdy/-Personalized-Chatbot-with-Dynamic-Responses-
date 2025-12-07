@@ -134,7 +134,7 @@ class AnswerRelevanceEvaluator(RAGEvaluatorInterface):
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.3,
-                max_output_tokens=150
+                max_output_tokens=1000
             )
             
             if not response:

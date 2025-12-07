@@ -199,7 +199,7 @@ class ContextRelevanceEvaluator(RAGEvaluatorInterface):
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.3,
-                max_output_tokens=10
+                max_output_tokens=100
             )
             
             if not response:

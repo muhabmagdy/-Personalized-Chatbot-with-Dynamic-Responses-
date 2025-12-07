@@ -29,16 +29,6 @@ class GeminiProvider(LLMInterface):
         self.logger = logging.getLogger("uvicorn")
 
     # -----------------------------------------
-    # MODEL SELECTION
-    # -----------------------------------------
-    def set_generation_model(self, model_id: str):
-        self.generation_model_id = model_id
-
-    def set_embedding_model(self, model_id: str, embedding_size: int):
-        self.embedding_model_id = model_id
-        self.embedding_size = embedding_size
-
-    # -----------------------------------------
     # HELPER
     # -----------------------------------------
     def process_text(self, text: str):
@@ -52,6 +42,12 @@ class GeminiProvider(LLMInterface):
             "role": role,
             "content": prompt,
         }
+
+    # -----------------------------------------
+    # GENERATION MODEL SELECTION
+    # -----------------------------------------
+    def set_generation_model(self, model_id: str):
+        self.generation_model_id = model_id
 
     # -----------------------------------------
     # GENERATION
@@ -131,6 +127,13 @@ class GeminiProvider(LLMInterface):
         
         self.logger.error("No text in response")
         return None
+
+    # -----------------------------------------
+    # EMBEDDING MODEL SELECTION
+    # -----------------------------------------
+    def set_embedding_model(self, model_id: str, embedding_size: int):
+        self.embedding_model_id = model_id
+        self.embedding_size = embedding_size
 
     # -----------------------------------------
     # EMBEDDING

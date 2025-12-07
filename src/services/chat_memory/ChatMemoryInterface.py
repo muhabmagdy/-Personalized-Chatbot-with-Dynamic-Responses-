@@ -67,7 +67,7 @@ class ChatMemoryInterface(ABC):
     async def get_recent_sessions(
         self, 
         project_id: int, 
-        limit: int = 10
+        limit: int = 3
     ) -> List[str]:
         """
         Get list of recent session IDs for a project.

@@ -105,17 +105,17 @@ class AnswerCorrectnessEvaluator(RAGEvaluatorInterface):
         try:
             prompt = f"""Compare the answer to the ground truth. Rate correctness 0.0 to 1.0.
 
-Ground Truth: {ground_truth}
+                    Ground Truth: {ground_truth}
 
-Answer: {answer}
+                    Answer: {answer}
 
-Correctness score (number only):"""
+                    Correctness score (number only):"""
             
             response = self.llm_client.generate_text(
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.3,
-                max_output_tokens=10
+                max_output_tokens=1000
             )
             
             if not response:

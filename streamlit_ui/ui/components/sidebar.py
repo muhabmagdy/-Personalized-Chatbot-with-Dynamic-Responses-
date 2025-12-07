@@ -53,10 +53,10 @@ class Sidebar:
             
             st.divider()
             
-            # Evaluation settings
-            self._render_evaluation_settings()
+            # # Evaluation settings
+            # self._render_evaluation_settings()
             
-            st.divider()
+            # st.divider()
             
             # Chat settings
             chat_settings = self._render_chat_settings()
@@ -236,36 +236,36 @@ class Sidebar:
             st.text(cost)
             st.caption(f"*{cost_label}*")
     
-    def _render_evaluation_settings(self):
-        """Render evaluation configuration."""
-        st.markdown("#### 📊 Evaluation")
+    # def _render_evaluation_settings(self):
+    #     """Render evaluation configuration."""
+    #     st.markdown("#### 📊 Evaluation")
         
-        enable_eval = st.checkbox(
-            "Enable Quality Evaluation",
-            value=st.session_state.get('enable_evaluation', False),
-            help="Automatically evaluate response quality using 6 metrics",
-            key="enable_evaluation"
-        )
+    #     enable_eval = st.checkbox(
+    #         "Enable Quality Evaluation",
+    #         value=st.session_state.get('enable_evaluation', False),
+    #         help="Automatically evaluate response quality using 6 metrics",
+    #         key="enable_evaluation"
+    #     )
         
-        if enable_eval:
-            st.success("✅ Quality metrics will be shown for each response")
+    #     if enable_eval:
+    #         st.success("✅ Quality metrics will be shown for each response")
             
-            with st.expander("ℹ️ Evaluation Metrics", expanded=False):
-                st.markdown("""
-                **Core Metrics:**
-                - 📝 Answer Relevance
-                - 🔍 Context Relevance
-                - ✅ Groundedness (Hallucination Detection)
+    #         with st.expander("ℹ️ Evaluation Metrics", expanded=False):
+    #             st.markdown("""
+    #             **Core Metrics:**
+    #             - 📝 Answer Relevance
+    #             - 🔍 Context Relevance
+    #             - ✅ Groundedness (Hallucination Detection)
                 
-                **Advanced Metrics:**
-                - 🎯 Context Precision
-                - 📊 Context Recall
-                - ✔️ Answer Correctness
+    #             **Advanced Metrics:**
+    #             - 🎯 Context Precision
+    #             - 📊 Context Recall
+    #             - ✔️ Answer Correctness
                 
-                *Note: Evaluation may slightly increase response time*
-                """)
-        else:
-            st.info("💡 Enable to see quality metrics for responses")
+    #             *Note: Evaluation may slightly increase response time*
+    #             """)
+    #     else:
+    #         st.info("💡 Enable to see quality metrics for responses")
     
     def _render_chat_settings(self) -> Dict[str, Any]:
         """Render chat configuration settings."""
@@ -276,10 +276,10 @@ class Sidebar:
             
             doc_limit = st.slider(
                 "Documents to Retrieve",
-                min_value=5,
-                max_value=50,
-                value=10,
-                step=5,
+                min_value=1,
+                max_value=15,
+                value=3,
+                step=1,
                 help="Number of documents to retrieve from vector database",
                 key="doc_limit"
             )
@@ -291,9 +291,9 @@ class Sidebar:
             history_limit = st.slider(
                 "Chat History Limit",
                 min_value=0,
-                max_value=50,
-                value=10,
-                step=5,
+                max_value=10,
+                value=3,
+                step=1,
                 help="Number of previous messages to include in context",
                 key="history_limit"
             )

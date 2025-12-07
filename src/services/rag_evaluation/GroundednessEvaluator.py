@@ -137,7 +137,7 @@ class GroundednessEvaluator(RAGEvaluatorInterface):
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.3,
-                max_output_tokens=300
+                max_output_tokens=1000
             )
             
             if not response:
@@ -151,7 +151,7 @@ class GroundednessEvaluator(RAGEvaluatorInterface):
                     claim = line.lstrip('-•').strip()
                     if claim and len(claim) > 10:
                         claims.append(claim)
-            
+            self.logger.info(f"Extracted claims: {claims}")
             return claims[:10]  # Limit to top 10 claims
             
         except Exception as e:
@@ -214,7 +214,7 @@ class GroundednessEvaluator(RAGEvaluatorInterface):
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.1,
-                max_output_tokens=10
+                max_output_tokens=1000
             )
             
             if not response:

@@ -33,7 +33,7 @@ async def startup_span():
         app.db_engine, class_=AsyncSession, expire_on_commit=False
     )
 
-    llm_provider_factory = LLMProviderFactory(settings)
+    llm_provider_factory = LLMProviderFactory(config=settings)
     embedder_provider_factory = EmbedderProviderFactory(config=settings)
     vectordb_provider_factory = VectorDBProviderFactory(config=settings, db_client=app.db_client)
 

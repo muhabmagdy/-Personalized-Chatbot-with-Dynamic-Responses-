@@ -103,7 +103,7 @@ class ContextRecallEvaluator(RAGEvaluatorInterface):
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.3,
-                max_output_tokens=200
+                max_output_tokens=1000
             )
             
             if not response:
@@ -131,7 +131,7 @@ class ContextRecallEvaluator(RAGEvaluatorInterface):
                 prompt=prompt,
                 chat_history=[],
                 temperature=0.1,
-                max_output_tokens=5
+                max_output_tokens=1000
             )
             
             return 'yes' in response.lower() if response else False

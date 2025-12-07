@@ -27,7 +27,7 @@ nlp_router = APIRouter(
     tags=["api_v1", "nlp"],
 )
 
-# Helper function to create NLP controller with chat memory
+# Helper function to create NLP controller
 def create_nlp_controller(request: Request, enable_evaluation:bool = False) -> NLPController:
     """
     Factory function to create NLP controller with all dependencies.
@@ -44,9 +44,8 @@ def create_nlp_controller(request: Request, enable_evaluation:bool = False) -> N
     )
 
 # ==========================================
-# INDEXING ENDPOINTS (UNCHANGED)
+# INDEXING Project Assets (Files)
 # ==========================================
-
 @nlp_router.post("/index/push/project/{project_id}")
 async def index_project(
     request: Request, 
@@ -139,9 +138,8 @@ async def index_project(
     )
 
 # ==========================================
-# 1. OPTIMIZED ENDPOINT WITH MEMORY MANAGEMENT
+# INDEXING One Asset (File) Of a Project 
 # ==========================================
-
 @nlp_router.post("/index/push/asset/{project_id}")
 async def index_asset(request: Request, project_id: int, push_request: PushAssetRequest):
     """Index all chunks for a specific asset into vector database."""
@@ -276,24 +274,9 @@ async def index_asset(request: Request, project_id: int, push_request: PushAsset
         }
     )
 
-@nlp_router.get("/index/info/{project_id}")
-async def get_project_index_info(request: Request, project_id: int):
-    """Get vector database collection info."""
-    project_model = await ProjectModel.create_instance(
-        db_client=request.app.db_client
-    )
-    project = await project_model.get_project_or_create_one(project_id=project_id)
-    
-    nlp_controller = create_nlp_controller(request)
-    collection_info = await nlp_controller.get_vector_db_collection_info(project=project)
-
-    return JSONResponse(
-        content={
-            "signal": ResponseSignal.VECTORDB_COLLECTION_RETRIEVED.value,
-            "collection_info": collection_info
-        }
-    )
-
+# ==========================================
+# Retireve Relevant Project Documents
+# ==========================================
 @nlp_router.post("/index/search/{project_id}")
 async def search_index(
     request: Request, 
@@ -327,9 +310,8 @@ async def search_index(
     )
 
 # ==========================================
-# NEW: ENHANCED RAG ANSWER ENDPOINT
+# RAG QUESTION ANSWERING ENDPOINTS
 # ==========================================
-
 @nlp_router.post("/index/answer/{project_id}")
 async def answer_rag(
     request: Request, 
@@ -339,7 +321,7 @@ async def answer_rag(
     """
     Answer RAG question with chat memory, multiple RAG strategies and optional comprehensive evaluation.
     
-    NEW FEATURES:
+    FEATURES:
     - Chat memory (persistent conversation history)
     - Multiple RAG strategies (basic/fusion/rerank)
     - Session management
@@ -352,10 +334,10 @@ async def answer_rag(
     Request Body:
         {
             "text": "Your question here",
-            "limit": 10,
+            "limit": 3,
             "session_id": "optional-session-id",  # Auto-generated if not provided
             "rag_type": "basic",  # Options: basic, fusion, rerank
-            "chat_history_limit": 10,  # Max messages from history to include
+            "chat_history_limit": 3,  # Max messages from history to include
             "evaluate": false,  # Enable evaluation
             "ground_truth": "optional reference answer"
         }
@@ -444,6 +426,9 @@ async def answer_rag(
     
     return JSONResponse(content=response_data)
 
+# ==========================================
+# EVALUATION ENDPOINTS
+# ==========================================
 @nlp_router.post("/evaluate/response/{project_id}")
 async def evaluate_rag_response(
     request: Request,
@@ -511,7 +496,6 @@ async def evaluate_rag_response(
                 "message": str(e)
             }
         )
-
 
 @nlp_router.post("/evaluate/batch/{project_id}")
 async def batch_evaluate_responses(
@@ -583,39 +567,81 @@ async def batch_evaluate_responses(
             }
         )
 
+# ==========================================
+# CHAT MEMORY MANAGEMENT ENDPOINTS
+# ==========================================
 
-@nlp_router.get("/strategies/info")
-async def get_strategies_info(request: Request):
-    """
-    Get information about all available RAG strategies.
-    
-    Response:
-        {
-            "strategies": [
-                {
-                    "type": "basic",
-                    "description": "...",
-                    "use_cases": [...],
-                    "requirements": {...}
-                },
-                ...
-            ]
-        }
-    """
+@nlp_router.delete("/chat/session/{project_id}/{session_id}")
+async def clear_chat_session(
+    request: Request,
+    project_id: int,
+    session_id: str
+):
+    """Clear chat history for a specific session."""
     nlp_controller = create_nlp_controller(request)
     
-    strategies_info = [
-        nlp_controller.rag_factory.get_strategy_info(strategy.value)
-        for strategy in RAGTypeEnum
-    ]
+    success = await nlp_controller.clear_chat_session(
+        session_id=session_id,
+        project_id=project_id
+    )
+    
+    if success:
+        return JSONResponse(
+            content={
+                "signal": "CHAT_SESSION_CLEARED",
+                "session_id": session_id
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "CHAT_SESSION_CLEAR_ERROR"}
+        )
+
+@nlp_router.get("/chat/sessions/{project_id}")
+async def get_chat_sessions(
+    request: Request,
+    project_id: int,
+    limit: int = 3
+):
+    """Get list of recent chat sessions for a project."""
+    nlp_controller = create_nlp_controller(request)
+    
+    sessions = await nlp_controller.get_chat_sessions(
+        project_id=project_id,
+        limit=limit
+    )
     
     return JSONResponse(
         content={
-            "signal": "SUCCESS",
-            "strategies": strategies_info
+            "signal": "CHAT_SESSIONS_RETRIEVED",
+            "project_id": project_id,
+            "sessions": sessions,
+            "count": len(sessions)
         }
     )
 
+
+# ==========================================
+# INFO ENDPOINTS
+# ==========================================
+@nlp_router.get("/index/info/{project_id}")
+async def get_project_index_info(request: Request, project_id: int):
+    """Get vector database collection info."""
+    project_model = await ProjectModel.create_instance(
+        db_client=request.app.db_client
+    )
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+    
+    nlp_controller = create_nlp_controller(request)
+    collection_info = await nlp_controller.get_vector_db_collection_info(project=project)
+
+    return JSONResponse(
+        content={
+            "signal": ResponseSignal.VECTORDB_COLLECTION_RETRIEVED.value,
+            "collection_info": collection_info
+        }
+    )
 
 @nlp_router.post("/strategies/recommend")
 async def recommend_strategy(request: Request, query: str):
@@ -651,57 +677,35 @@ async def recommend_strategy(request: Request, query: str):
         }
     )
 
-# ==========================================
-# NEW: CHAT MEMORY MANAGEMENT ENDPOINTS
-# ==========================================
-
-@nlp_router.delete("/chat/session/{project_id}/{session_id}")
-async def clear_chat_session(
-    request: Request,
-    project_id: int,
-    session_id: str
-):
-    """Clear chat history for a specific session."""
+@nlp_router.get("/strategies/info")
+async def get_strategies_info(request: Request):
+    """
+    Get information about all available RAG strategies.
+    
+    Response:
+        {
+            "strategies": [
+                {
+                    "type": "basic",
+                    "description": "...",
+                    "use_cases": [...],
+                    "requirements": {...}
+                },
+                ...
+            ]
+        }
+    """
     nlp_controller = create_nlp_controller(request)
     
-    success = await nlp_controller.clear_chat_session(
-        session_id=session_id,
-        project_id=project_id
-    )
-    
-    if success:
-        return JSONResponse(
-            content={
-                "signal": "CHAT_SESSION_CLEARED",
-                "session_id": session_id
-            }
-        )
-    else:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"signal": "CHAT_SESSION_CLEAR_ERROR"}
-        )
-
-@nlp_router.get("/chat/sessions/{project_id}")
-async def get_chat_sessions(
-    request: Request,
-    project_id: int,
-    limit: int = 10
-):
-    """Get list of recent chat sessions for a project."""
-    nlp_controller = create_nlp_controller(request)
-    
-    sessions = await nlp_controller.get_chat_sessions(
-        project_id=project_id,
-        limit=limit
-    )
+    strategies_info = [
+        nlp_controller.rag_factory.get_strategy_info(strategy.value)
+        for strategy in RAGTypeEnum
+    ]
     
     return JSONResponse(
         content={
-            "signal": "CHAT_SESSIONS_RETRIEVED",
-            "project_id": project_id,
-            "sessions": sessions,
-            "count": len(sessions)
+            "signal": "SUCCESS",
+            "strategies": strategies_info
         }
     )
 
@@ -716,6 +720,7 @@ async def get_available_rag_strategies():
                     "type": RAGTypeEnum.BASIC.value,
                     "name": "Basic RAG",
                     "description": "Single query → Vector search → Generate answer"
+
                 },
                 {
                     "type": RAGTypeEnum.FUSION.value,

@@ -162,8 +162,8 @@ class ChatInterface:
                             text=prompt,
                             session_id=st.session_state.current_session_id,
                             rag_type=self.rag_type,
-                            limit=self.chat_settings.get('doc_limit', 10),
-                            chat_history_limit=self.chat_settings.get('history_limit', 10),
+                            limit=self.chat_settings.get('doc_limit', 3),
+                            chat_history_limit=self.chat_settings.get('history_limit', 3),
                             evaluate=enable_evaluation
                         )
                     )
@@ -199,7 +199,7 @@ class ChatInterface:
                     # Show evaluation if available
                     if metadata.get("evaluation"):
                         with evaluation_container:
-                            self.evaluation_display.render_compact(metadata["evaluation"])
+                            self.evaluation_display.render(metadata["evaluation"])
                     
                 except APIError as e:
                     error_msg = self._format_error_message(str(e))
