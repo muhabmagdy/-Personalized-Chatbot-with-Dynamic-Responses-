@@ -1,0 +1,2 @@
+#Ollama client
+ollama==0.6.1

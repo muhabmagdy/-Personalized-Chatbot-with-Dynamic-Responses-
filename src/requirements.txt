@@ -24,4 +24,13 @@ starlette-exporter==0.23.0
 fastapi-health==0.4.0
 
 # HTTP Client for API calls
-httpx==0.25.2
+httpx==0.27.0
+aiohttp==3.13.2
+
+# MLflow & Tracking
+mlflow==3.7.0
+dagshub==0.6.3
+
+# Evaluation
+numpy==2.3.5
+scikit-learn==1.7.2

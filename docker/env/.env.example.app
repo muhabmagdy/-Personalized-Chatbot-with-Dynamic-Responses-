@@ -14,6 +14,9 @@ POSTGRES_MAIN_DATABASE=""
 
 # ========================= LLM Config =========================
 GENERATION_BACKEND = "GEMINI"
+GENERATION_BACKEND_FOR_EVALUATION = "OLLAMA"
+OLLAMA_HOST = "http://ollama:11434"
+
 EMBEDDING_BACKEND_LITERAL = ["HUGGINGFACE", "FASTEMBED"]
 EMBEDDING_BACKEND = "FASTEMBED"
 
@@ -24,6 +27,7 @@ GEMINI_API_KEY=""
 
 GENERATION_MODEL_ID_LITERAL = ["gpt-4o-mini", "gpt-4o","gemini-2.5-flash"]
 GENERATION_MODEL_ID="gemini-2.5-flash"
+GENERATION_MODEL_ID_FOR_EVALUATION="phi3:mini-instruct-q4_K_M" #phi3:mini, phi3:mini-instruct-q4_K_M, llama3:8b-instruct, llama3:8b-instruct-q4_K_M
 
 EMBEDDING_ID_LITERAL = ["gemini-embedding-001", "sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-small-en-v1.5"]
 EMBEDDING_MODEL_ID="BAAI/bge-small-en-v1.5"
@@ -44,6 +48,31 @@ VECTOR_DB_BACKEND = "PGVECTOR"
 VECTOR_DB_PATH = "qdrant_db"
 VECTOR_DB_DISTANCE_METHOD = "cosine"
 VECTOR_DB_PGVEC_INDEX_THRESHOLD = 1000
+
+# ===========================================
+# DAGSHUB CONFIGURATION (MLflow Tracking)
+# ===========================================
+# Get your credentials from https://dagshub.com
+DAGSHUB_USERNAME="your_dagshub_username"
+DAGSHUB_REPO_NAME="your_repo_name"
+DAGSHUB_TOKEN="your_dagshub_token"
+
+# ===========================================
+# MLFLOW CONFIGURATION
+# ===========================================
+# Optional: Override auto-generated DagsHub URI
+# MLFLOW_TRACKING_URI=https://dagshub.com/username/repo.mlflow
+MLFLOW_EXPERIMENT_NAME="rag-experiments"
+MLFLOW_ENABLE_TRACKING=true
+
+# ===========================================
+# RAGAS EVALUATION CONFIGURATION
+# ===========================================
+RAGAS_ENABLE_FAITHFULNESS=true
+RAGAS_ENABLE_ANSWER_RELEVANCY=true
+RAGAS_ENABLE_CONTEXT_PRECISION=true
+RAGAS_BATCH_SIZE=10
+RAGAS_TIMEOUT_SECONDS=60
 
 # ========================= Template Configs =========================
 PRIMARY_LANG = "en"

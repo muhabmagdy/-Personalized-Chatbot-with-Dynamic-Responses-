@@ -16,8 +16,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY src/requirements.txt .
+COPY src/ollama_requirements.txt .
 
 RUN uv pip install -r requirements.txt --system
+RUN uv pip install -r ollama_requirements.txt --system
+
 
 COPY src/ .
 

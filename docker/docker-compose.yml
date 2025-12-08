@@ -33,6 +33,8 @@ services:
     depends_on:
       pgvector:
         condition: service_healthy
+      ollama:
+        condition: service_started
     env_file:
       - ./env/.env.app
 
@@ -140,6 +142,38 @@ services:
     networks:
       - backend
     restart: always
+  
+  # # Ollama LLM Server
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   volumes:
+  #     - ollama_models:/root/.ollama
+  #     - ./ollama/entrypoint.sh:/usr/local/bin/entrypoint.sh
+  #   networks:
+  #     - backend
+  #   restart: always
+  #   ports:
+  #     - "11434:11434"
+  #   entrypoint: ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
+  
+  # Ollama (for evaluation)
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - backend
+    restart: always
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        ollama serve &
+        sleep 5
+        ollama pull phi3:3.8b
+        wait
 
 networks:
   backend:
@@ -150,3 +184,4 @@ volumes:
   pgvector:
   prometheus_data:
   grafana_data:
+  ollama_data:
