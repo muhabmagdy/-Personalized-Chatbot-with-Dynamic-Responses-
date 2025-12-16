@@ -104,15 +104,23 @@ class AnswerRelevancyMetric:
                 max_output_tokens=300,
                 temperature=0.3 # Slight temperature for diversity
             )
+
+            self.logger.info(f"Promopt sent for question generation. {prompt}")
+
+            self.logger.info(f"LLM response for question generation: {response}")
             
             # Parse JSON response
             questions = self._parse_json_response(response)
-            
+
+            self.logger.info(f"Parsed questions: {questions}")
+
             # Filter and validate questions
             valid_questions = [
                 q for q in questions 
                 if isinstance(q, str) and len(q) > 10 and '?' in q
             ]
+
+            self.logger.info(f"Valid questions: {valid_questions}")
             
             return valid_questions[:self.num_questions]
             
